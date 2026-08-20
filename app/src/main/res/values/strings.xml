@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Add this line below so Android knows what to call your app! -->
+    <string name="app_name">FreshTrack OCR</string>
+
+    <string name="camera_permission_denied">Camera permission denied — cannot open live scan.</string>
+    <string name="no_image_selected">No image selected.</string>
+    <string name="gallery_ocr_success">Extracted: %1$s</string>
+</resources>

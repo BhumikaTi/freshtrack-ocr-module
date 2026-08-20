@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background_dark">#0D0F0D</color>
+    <color name="surface_dark">#1A1F1A</color>
+    <color name="neon_green">#39FF14</color>
+    <color name="neon_green_dim">#1FAF3A</color>
+    <color name="text_primary">#EAFBEF</color>
+    <color name="text_secondary">#8CA694</color>
+    <color name="error_bright">#FF5252</color>
+</resources>
