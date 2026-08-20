@@ -128,6 +128,3 @@ unfiltered — no trimming, regex, or cleanup happens on this side. See
   screen (both input paths route through here)
 - `ui/MainActivity.kt` — entry screen (camera vs. gallery choice)
 
-## Demo video
-
-[Link to be added]
