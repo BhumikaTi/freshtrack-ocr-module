@@ -1,59 +1,158 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:background="@color/background_dark">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:paddingStart="24dp"
+        android:paddingTop="36dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="36dp">
+
+        <!-- ===================================================== -->
+        <!-- HEADER -->
+        <!-- ===================================================== -->
 
         <TextView
             android:id="@+id/tvResultTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Expiry Date Detected"
-            android:textSize="26sp"
+            android:text="Scan Result"
+            android:textColor="@color/text_primary"
+            android:textSize="30sp"
             android:textStyle="bold"
-            android:layout_marginBottom="32dp" />
+            android:layout_marginBottom="8dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Product name"
-            android:textSize="14sp"
-            android:layout_marginBottom="8dp" />
+            android:text="Review the detected product information"
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp"
+            android:layout_marginBottom="30dp" />
 
-        <EditText
-            android:id="@+id/etProductName"
+        <!-- ===================================================== -->
+        <!-- PRODUCT CARD -->
+        <!-- ===================================================== -->
+
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter product name"
-            android:inputType="text"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="@color/surface_dark"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="1dp"
+            app:strokeColor="#E3EAE5"
+            app:strokeWidth="1dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Expiry date"
-            android:textSize="14sp"
-            android:layout_marginBottom="8dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
 
-        <EditText
-            android:id="@+id/etExpiryDate"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PRODUCT NAME"
+                    android:textColor="@color/neon_green"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/etProductName"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:backgroundTint="#D7E2DB"
+                    android:hint="Enter product name"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="#A0AAA4"
+                    android:textSize="17sp"
+                    android:singleLine="true"
+                    android:inputType="text"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ===================================================== -->
+        <!-- EXPIRY CARD -->
+        <!-- ===================================================== -->
+
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="MM/YY"
-            android:inputType="text"
-            android:layout_marginBottom="32dp" />
+            android:layout_marginBottom="28dp"
+            app:cardBackgroundColor="@color/surface_dark"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="1dp"
+            app:strokeColor="#E3EAE5"
+            app:strokeWidth="1dp">
 
-        <Button
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="EXPIRY DATE"
+                    android:textColor="@color/neon_green"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/etExpiryDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="58dp"
+                    android:backgroundTint="#D7E2DB"
+                    android:hint="MM/YYYY"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="#A0AAA4"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:gravity="center_vertical"
+                    android:singleLine="true"
+                    android:inputType="text"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ===================================================== -->
+        <!-- SAVE -->
+        <!-- ===================================================== -->
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSaveProduct"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Save Product" />
+            android:layout_height="58dp"
+            android:text="Save Product"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/neon_green"
+            android:elevation="2dp"
+            app:cornerRadius="16dp" />
 
     </LinearLayout>
 

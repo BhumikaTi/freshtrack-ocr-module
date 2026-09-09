@@ -25,6 +25,9 @@
             android:name=".ui.ResultActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.ManualEntryActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.OcrTest">
