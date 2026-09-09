@@ -1,10 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="background_dark">#0D0F0D</color>
-    <color name="surface_dark">#1A1F1A</color>
-    <color name="neon_green">#39FF14</color>
-    <color name="neon_green_dim">#1FAF3A</color>
-    <color name="text_primary">#EAFBEF</color>
-    <color name="text_secondary">#8CA694</color>
-    <color name="error_bright">#FF5252</color>
+
+    <!-- Background -->
+
+    <color name="background_dark">#F2F6F2</color>
+
+
+    <!-- Surfaces -->
+
+    <color name="surface_dark">#FFFFFF</color>
+
+    <color name="surface_elevated">#FFFFFF</color>
+
+
+    <!-- Primary -->
+
+    <!-- Existing name retained so other screens continue working. -->
+
+    <color name="neon_green">#3E9F68</color>
+
+    <color name="neon_green_dim">#327F53</color>
+
+    <color name="primary_dark">#327F53</color>
+
+
+    <!-- Text -->
+
+    <color name="text_primary">#24312A</color>
+
+    <color name="text_secondary">#748078</color>
+
+
+    <!-- Status -->
+
+    <color name="error_bright">#D95C63</color>
+
+    <color name="success_bright">#3E9F68</color>
+
 </resources>

@@ -19,43 +19,124 @@ class MainActivity : AppCompatActivity() {
 
     private val requestCameraPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) startCameraScan() else tvStatus.text = getString(R.string.camera_permission_denied)
+            if (granted) {
+                startCameraScan()
+            } else {
+                tvStatus.text =
+                    getString(R.string.camera_permission_denied)
+            }
         }
 
     private val pickGalleryImage =
-        registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+        registerForActivityResult(
+            ActivityResultContracts.PickVisualMedia()
+        ) { uri: Uri? ->
+
             if (uri != null) {
-                startActivity(Intent(this, CropConfirmActivity::class.java).apply {
-                    putExtra(CropConfirmActivity.EXTRA_URI, uri.toString())
-                })
+
+                startActivity(
+                    Intent(
+                        this,
+                        CropConfirmActivity::class.java
+                    ).apply {
+                        putExtra(
+                            CropConfirmActivity.EXTRA_URI,
+                            uri.toString()
+                        )
+                    }
+                )
+
             } else {
-                tvStatus.text = getString(R.string.no_image_selected)
+
+                tvStatus.text =
+                    getString(R.string.no_image_selected)
             }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_main)
 
         tvStatus = findViewById(R.id.tvStatus)
 
-        findViewById<MaterialButton>(R.id.btnScanCamera).setOnClickListener {
+        // --------------------------------------------------------
+        // LIVE OCR
+        // --------------------------------------------------------
+
+        findViewById<MaterialButton>(
+            R.id.btnScanCamera
+        ).setOnClickListener {
+
             tvStatus.text = ""
+
             onScanCameraClicked()
         }
-        findViewById<MaterialButton>(R.id.btnChooseGallery).setOnClickListener {
+
+
+        // --------------------------------------------------------
+        // PICK FROM GALLERY
+        // --------------------------------------------------------
+
+        findViewById<MaterialButton>(
+            R.id.btnChooseGallery
+        ).setOnClickListener {
+
             tvStatus.text = ""
-            pickGalleryImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+
+            pickGalleryImage.launch(
+                PickVisualMediaRequest(
+                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                )
+            )
+        }
+
+
+        // --------------------------------------------------------
+        // ADD MANUALLY
+        // --------------------------------------------------------
+
+        findViewById<MaterialButton>(
+            R.id.btnAddManually
+        ).setOnClickListener {
+
+            tvStatus.text = ""
+
+            startActivity(
+                Intent(
+                    this,
+                    ManualEntryActivity::class.java
+                )
+            )
         }
     }
 
     private fun onScanCameraClicked() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+
+        if (
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+
             startCameraScan()
+
         } else {
-            requestCameraPermission.launch(Manifest.permission.CAMERA)
+
+            requestCameraPermission.launch(
+                Manifest.permission.CAMERA
+            )
         }
     }
 
-    private fun startCameraScan() = startActivity(Intent(this, CameraScanActivity::class.java))
+    private fun startCameraScan() {
+
+        startActivity(
+            Intent(
+                this,
+                CameraScanActivity::class.java
+            )
+        )
+    }
 }
