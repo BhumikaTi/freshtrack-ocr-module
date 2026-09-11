@@ -18,7 +18,7 @@ class AddOptionsActivity : AppCompatActivity() {
             if (uri != null) {
                 // For now, send the selected image to the OCR flow.
                 val intent = Intent(this, CropConfirmActivity::class.java)
-                intent.putExtra("imageUri", uri.toString())
+                intent.putExtra(CropConfirmActivity.EXTRA_URI, uri.toString())
                 startActivity(intent)
             }
         }

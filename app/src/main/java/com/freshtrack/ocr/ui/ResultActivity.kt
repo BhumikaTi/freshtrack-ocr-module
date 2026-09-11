@@ -57,9 +57,7 @@ class ResultActivity : AppCompatActivity() {
         // --------------------------------------------------------
         // SAVE PRODUCT
         // --------------------------------------------------------
-
         btnSaveProduct.setOnClickListener {
-
             val enteredProductName =
                 etProductName.text.toString().trim()
 
@@ -68,23 +66,38 @@ class ResultActivity : AppCompatActivity() {
 
             if (enteredProductName.isEmpty()) {
                 etProductName.error = "Enter product name"
-                etProductName.requestFocus()
                 return@setOnClickListener
             }
 
             if (enteredExpiryDate.isEmpty()) {
                 etExpiryDate.error = "Enter expiry date"
-                etExpiryDate.requestFocus()
                 return@setOnClickListener
             }
 
+            val sharedPreferences = getSharedPreferences(
+                "FreshTrackPrefs",
+                MODE_PRIVATE
+            )
+
+            val products = sharedPreferences
+                .getStringSet("products", emptySet())
+                ?.toMutableSet()
+                ?: mutableSetOf()
+
+            val productValue =
+                "$enteredProductName|$enteredExpiryDate"
+
+            products.add(productValue)
+
+            sharedPreferences.edit()
+                .putStringSet("products", products)
+                .apply()
+
             Toast.makeText(
                 this,
-                "Product ready to save!",
+                "Product saved successfully!",
                 Toast.LENGTH_SHORT
             ).show()
-
-            // Room database integration will be connected here.
         }
     }
 
