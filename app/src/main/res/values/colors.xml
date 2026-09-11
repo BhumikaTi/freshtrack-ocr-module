@@ -2,28 +2,31 @@
 <resources>
 
     <!-- Main background -->
-    <color name="background_dark">#F5F3EE</color>
+    <color name="background_dark">#F5F6F1</color>
 
     <!-- Surfaces -->
     <color name="card_dark">#FFFFFF</color>
-    <color name="surface_dark">#ECEAE4</color>
+    <color name="surface_dark">#ECEFEA</color>
     <color name="surface_elevated">#FFFFFF</color>
 
-    <!-- Primary -->
-    <color name="green_primary">#6B7D70</color>
+    <!-- Primary Forest Green -->
+    <color name="green_primary">#2F5D50</color>
 
-    <!-- Kept for compatibility with existing screens -->
-    <!-- Not neon anymore -->
-    <color name="neon_green">#6B7D70</color>
-    <color name="neon_green_dim">#596A5F</color>
-    <color name="primary_dark">#596A5F</color>
+    <!-- Compatibility with existing screens -->
+    <color name="neon_green">#2F5D50</color>
+    <color name="neon_green_dim">#24483E</color>
+    <color name="primary_dark">#24483E</color>
 
     <!-- Text -->
-    <color name="text_primary">#242622</color>
-    <color name="text_secondary">#777A74</color>
+    <color name="text_primary">#202421</color>
+    <color name="text_secondary">#6F756F</color>
 
     <!-- Status -->
+    <color name="success_bright">#2F5D50</color>
+    <color name="warning_amber">#B08A3E</color>
     <color name="error_bright">#C96F6F</color>
-    <color name="success_bright">#6B7D70</color>
+
+    <!-- Borders -->
+    <color name="border_light">#DDE2DC</color>
 
 </resources>

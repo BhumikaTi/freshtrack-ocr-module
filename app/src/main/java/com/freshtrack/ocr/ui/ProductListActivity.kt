@@ -20,17 +20,26 @@ class ProductListActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_product_list)
 
-        productListContainer = findViewById(R.id.productListContainer)
+        productListContainer =
+            findViewById(R.id.productListContainer)
 
-        findViewById<MaterialButton>(R.id.btnBack).setOnClickListener {
+        findViewById<MaterialButton>(
+            R.id.btnBack
+        ).setOnClickListener {
             finish()
         }
 
-        findViewById<MaterialButton>(R.id.btnAddProduct).setOnClickListener {
+        findViewById<MaterialButton>(
+            R.id.btnAddProduct
+        ).setOnClickListener {
             startActivity(
-                Intent(this, AddProductActivity::class.java)
+                Intent(
+                    this,
+                    AddProductActivity::class.java
+                )
             )
         }
 
@@ -46,17 +55,23 @@ class ProductListActivity : AppCompatActivity() {
     }
 
     private fun loadProducts() {
+
         productListContainer.removeAllViews()
 
-        val sharedPreferences = getSharedPreferences(
-            "FreshTrackPrefs",
-            MODE_PRIVATE
-        )
+        val sharedPreferences =
+            getSharedPreferences(
+                "FreshTrackPrefs",
+                MODE_PRIVATE
+            )
 
-        val products = sharedPreferences
-            .getStringSet("products", emptySet())
-            ?.toList()
-            ?: emptyList()
+        val products =
+            sharedPreferences
+                .getStringSet(
+                    "products",
+                    emptySet()
+                )
+                ?.toList()
+                ?: emptyList()
 
         if (products.isEmpty()) {
             showEmptyMessage()
@@ -64,6 +79,7 @@ class ProductListActivity : AppCompatActivity() {
         }
 
         for (product in products) {
+
             val parts = product.split("|")
 
             if (parts.size < 2) {
@@ -82,17 +98,30 @@ class ProductListActivity : AppCompatActivity() {
     }
 
     private fun showEmptyMessage() {
+
         val emptyText = TextView(this)
 
         emptyText.text = "No products added yet."
-        emptyText.textSize = 16f
-        emptyText.gravity = Gravity.CENTER
-        emptyText.setTextColor(
-            Color.parseColor("#AAB7AC")
-        )
-        emptyText.setPadding(0, 24, 0, 24)
 
-        productListContainer.addView(emptyText)
+        emptyText.textSize = 14f
+
+        emptyText.gravity =
+            Gravity.CENTER
+
+        emptyText.setTextColor(
+            getColor(R.color.text_secondary)
+        )
+
+        emptyText.setPadding(
+            0,
+            dp(12),
+            0,
+            dp(12)
+        )
+
+        productListContainer.addView(
+            emptyText
+        )
     }
 
     private fun createProductCard(
@@ -100,81 +129,262 @@ class ProductListActivity : AppCompatActivity() {
         expiryDate: String,
         fullProductValue: String
     ) {
-        val card = MaterialCardView(this)
 
-        val cardLayout = LinearLayout(this)
-        cardLayout.orientation = LinearLayout.VERTICAL
-        cardLayout.setPadding(24, 20, 24, 20)
+        // -------------------------
+        // CARD
+        // -------------------------
 
-        val nameText = TextView(this)
-        nameText.text = productName
-        nameText.textSize = 20f
+        val card =
+            MaterialCardView(this)
+
+        card.setCardBackgroundColor(
+            getColor(R.color.card_dark)
+        )
+
+        card.radius =
+            dp(12).toFloat()
+
+        card.strokeWidth =
+            dp(1)
+
+        card.strokeColor =
+            getColor(R.color.border_light)
+
+
+        // -------------------------
+        // CARD CONTENT
+        // -------------------------
+
+        val cardLayout =
+            LinearLayout(this)
+
+        cardLayout.orientation =
+            LinearLayout.VERTICAL
+
+        cardLayout.setPadding(
+            dp(12),
+            dp(9),
+            dp(12),
+            dp(9)
+        )
+
+
+        // -------------------------
+        // PRODUCT NAME
+        // -------------------------
+
+        val nameText =
+            TextView(this)
+
+        nameText.text =
+            productName
+
+        nameText.textSize =
+            17f
+
         nameText.setTextColor(
-            Color.parseColor("#F1F5EF")
+            getColor(R.color.text_primary)
         )
 
-        val expiryText = TextView(this)
-        expiryText.text = "Expires: $expiryDate"
-        expiryText.textSize = 15f
+
+        // -------------------------
+        // EXPIRY DATE
+        // -------------------------
+
+        val expiryText =
+            TextView(this)
+
+        expiryText.text =
+            "Expires: $expiryDate"
+
+        expiryText.textSize =
+            13f
+
         expiryText.setTextColor(
-            Color.parseColor("#AAB7AC")
+            getColor(R.color.text_secondary)
         )
 
-        val status = getExpiryStatus(expiryDate)
+        val expiryParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
 
-        val statusText = TextView(this)
-        statusText.text = status
-        statusText.textSize = 14f
+        expiryParams.topMargin =
+            dp(2)
+
+
+        // -------------------------
+        // STATUS
+        // -------------------------
+
+        val status =
+            getExpiryStatus(expiryDate)
+
+        val statusText =
+            TextView(this)
+
+        statusText.text =
+            status
+
+        statusText.textSize =
+            12f
 
         when {
+
             status.startsWith("Expired") -> {
+
                 statusText.setTextColor(
-                    Color.parseColor("#C98585")
+                    getColor(R.color.error_bright)
                 )
             }
 
             status.startsWith("Expires today") ||
                     status.startsWith("Expires soon") -> {
+
                 statusText.setTextColor(
-                    Color.parseColor("#D8BC78")
+                    getColor(R.color.warning_amber)
+                )
+            }
+
+            status.startsWith("Fresh") -> {
+
+                statusText.setTextColor(
+                    getColor(R.color.green_primary)
                 )
             }
 
             else -> {
+
                 statusText.setTextColor(
-                    Color.parseColor("#C2C7A5")
+                    getColor(R.color.text_secondary)
                 )
             }
         }
 
-        val buttonLayout = LinearLayout(this)
-        buttonLayout.orientation = LinearLayout.HORIZONTAL
+        val statusParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
 
-        val editButton = MaterialButton(
-            this,
-            null,
-            com.google.android.material.R.attr.materialButtonOutlinedStyle
+        statusParams.topMargin =
+            dp(1)
+
+
+        // -------------------------
+        // BUTTON LAYOUT
+        // -------------------------
+
+        val buttonLayout =
+            LinearLayout(this)
+
+        buttonLayout.orientation =
+            LinearLayout.HORIZONTAL
+
+        buttonLayout.gravity =
+            Gravity.CENTER_VERTICAL
+
+
+        // -------------------------
+        // EDIT BUTTON
+        // -------------------------
+
+        val editButton =
+            MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            )
+
+        editButton.text =
+            "Edit"
+
+        editButton.textSize =
+            11f
+
+        editButton.gravity =
+            Gravity.CENTER
+
+        editButton.setTextColor(
+            getColor(R.color.green_primary)
         )
 
-        editButton.text = "Edit"
-        editButton.textSize = 13f
-        editButton.gravity = Gravity.CENTER
+        editButton.minHeight = 0
+        editButton.minWidth = 0
 
-        val deleteButton = MaterialButton(
-            this,
-            null,
-            com.google.android.material.R.attr.materialButtonOutlinedStyle
+        editButton.insetTop = 0
+        editButton.insetBottom = 0
+
+        editButton.setPadding(
+            0,
+            0,
+            0,
+            0
         )
 
-        deleteButton.text = "Delete"
-        deleteButton.textSize = 13f
-        deleteButton.gravity = Gravity.CENTER
+        editButton.strokeWidth =
+            dp(1)
+
+        editButton.cornerRadius =
+            dp(9)
+
+
+        // -------------------------
+        // DELETE BUTTON
+        // -------------------------
+
+        val deleteButton =
+            MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            )
+
+        deleteButton.text =
+            "Delete"
+
+        deleteButton.textSize =
+            11f
+
+        deleteButton.gravity =
+            Gravity.CENTER
+
+        deleteButton.setTextColor(
+            getColor(R.color.green_primary)
+        )
+
+        deleteButton.minHeight = 0
+        deleteButton.minWidth = 0
+
+        deleteButton.insetTop = 0
+        deleteButton.insetBottom = 0
+
+        deleteButton.setPadding(
+            0,
+            0,
+            0,
+            0
+        )
+
+        deleteButton.strokeWidth =
+            dp(1)
+
+        deleteButton.cornerRadius =
+            dp(9)
+
+
+        // -------------------------
+        // EDIT CLICK
+        // -------------------------
 
         editButton.setOnClickListener {
-            val intent = Intent(
-                this,
-                AddProductActivity::class.java
-            )
+
+            val intent =
+                Intent(
+                    this,
+                    AddProductActivity::class.java
+                )
 
             intent.putExtra(
                 "productValue",
@@ -184,25 +394,52 @@ class ProductListActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+
+        // -------------------------
+        // DELETE CLICK
+        // -------------------------
+
         deleteButton.setOnClickListener {
-            deleteProduct(fullProductValue)
+
+            deleteProduct(
+                fullProductValue
+            )
         }
 
-        val editParams = LinearLayout.LayoutParams(
+
+        // -------------------------
+        // BUTTON SIZES
+        // -------------------------
+
+        val editParams =
+            LinearLayout.LayoutParams(
+                0,
+                dp(34),
+                1f
+            )
+
+        editParams.setMargins(
             0,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            1f
+            dp(5),
+            dp(4),
+            0
         )
 
-        editParams.setMargins(0, 8, 8, 0)
 
-        val deleteParams = LinearLayout.LayoutParams(
+        val deleteParams =
+            LinearLayout.LayoutParams(
+                0,
+                dp(34),
+                1f
+            )
+
+        deleteParams.setMargins(
+            dp(4),
+            dp(5),
             0,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            1f
+            0
         )
 
-        deleteParams.setMargins(8, 8, 0, 0)
 
         buttonLayout.addView(
             editButton,
@@ -214,19 +451,50 @@ class ProductListActivity : AppCompatActivity() {
             deleteParams
         )
 
-        cardLayout.addView(nameText)
-        cardLayout.addView(expiryText)
-        cardLayout.addView(statusText)
-        cardLayout.addView(buttonLayout)
 
-        card.addView(cardLayout)
+        // -------------------------
+        // ADD CONTENT TO CARD
+        // -------------------------
 
-        val cardParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
+        cardLayout.addView(
+            nameText
         )
 
-        cardParams.setMargins(0, 0, 0, 16)
+        cardLayout.addView(
+            expiryText,
+            expiryParams
+        )
+
+        cardLayout.addView(
+            statusText,
+            statusParams
+        )
+
+        cardLayout.addView(
+            buttonLayout
+        )
+
+        card.addView(
+            cardLayout
+        )
+
+
+        // -------------------------
+        // CARD SPACING
+        // -------------------------
+
+        val cardParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+        cardParams.setMargins(
+            0,
+            0,
+            0,
+            dp(7)
+        )
 
         productListContainer.addView(
             card,
@@ -234,39 +502,92 @@ class ProductListActivity : AppCompatActivity() {
         )
     }
 
-    private fun getExpiryStatus(expiryDate: String): String {
+
+    // -------------------------
+    // EXPIRY STATUS
+    // -------------------------
+
+    private fun getExpiryStatus(
+        expiryDate: String
+    ): String {
+
         return try {
-            val dateFormat = SimpleDateFormat(
-                "dd MMM yyyy",
-                Locale.getDefault()
+
+            val dateFormat =
+                SimpleDateFormat(
+                    "dd MMM yyyy",
+                    Locale.getDefault()
+                )
+
+            val expiry =
+                dateFormat.parse(expiryDate)
+                    ?: return "Status unavailable"
+
+
+            val today =
+                Calendar.getInstance()
+
+            today.set(
+                Calendar.HOUR_OF_DAY,
+                0
             )
 
-            val expiry = dateFormat.parse(expiryDate)
-                ?: return "Status unavailable"
+            today.set(
+                Calendar.MINUTE,
+                0
+            )
 
-            val today = Calendar.getInstance()
+            today.set(
+                Calendar.SECOND,
+                0
+            )
 
-            today.set(Calendar.HOUR_OF_DAY, 0)
-            today.set(Calendar.MINUTE, 0)
-            today.set(Calendar.SECOND, 0)
-            today.set(Calendar.MILLISECOND, 0)
+            today.set(
+                Calendar.MILLISECOND,
+                0
+            )
 
-            val expiryCalendar = Calendar.getInstance()
-            expiryCalendar.time = expiry
 
-            expiryCalendar.set(Calendar.HOUR_OF_DAY, 0)
-            expiryCalendar.set(Calendar.MINUTE, 0)
-            expiryCalendar.set(Calendar.SECOND, 0)
-            expiryCalendar.set(Calendar.MILLISECOND, 0)
+            val expiryCalendar =
+                Calendar.getInstance()
+
+            expiryCalendar.time =
+                expiry
+
+            expiryCalendar.set(
+                Calendar.HOUR_OF_DAY,
+                0
+            )
+
+            expiryCalendar.set(
+                Calendar.MINUTE,
+                0
+            )
+
+            expiryCalendar.set(
+                Calendar.SECOND,
+                0
+            )
+
+            expiryCalendar.set(
+                Calendar.MILLISECOND,
+                0
+            )
+
 
             val difference =
-                expiryCalendar.timeInMillis - today.timeInMillis
+                expiryCalendar.timeInMillis -
+                        today.timeInMillis
 
-            val daysLeft = difference /
-                    (1000 * 60 * 60 * 24)
+
+            val daysLeft =
+                difference /
+                        (1000 * 60 * 60 * 24)
+
 
             when {
-                daysLeft < 0 -> {
+
+                daysLeft < 0L -> {
                     "Expired"
                 }
 
@@ -274,7 +595,7 @@ class ProductListActivity : AppCompatActivity() {
                     "Expires today"
                 }
 
-                daysLeft <= 7 -> {
+                daysLeft <= 7L -> {
                     "Expires soon — $daysLeft days left"
                 }
 
@@ -284,28 +605,66 @@ class ProductListActivity : AppCompatActivity() {
             }
 
         } catch (e: Exception) {
+
             "Status unavailable"
         }
     }
 
-    private fun deleteProduct(productValue: String) {
-        val sharedPreferences = getSharedPreferences(
-            "FreshTrackPrefs",
-            MODE_PRIVATE
+
+    // -------------------------
+    // DELETE PRODUCT
+    // -------------------------
+
+    private fun deleteProduct(
+        productValue: String
+    ) {
+
+        val sharedPreferences =
+            getSharedPreferences(
+                "FreshTrackPrefs",
+                MODE_PRIVATE
+            )
+
+        val products =
+            sharedPreferences
+                .getStringSet(
+                    "products",
+                    emptySet()
+                )
+                ?.toMutableSet()
+                ?: mutableSetOf()
+
+
+        products.remove(
+            productValue
         )
 
-        val products = sharedPreferences
-            .getStringSet("products", emptySet())
-            ?.toMutableSet()
-            ?: mutableSetOf()
 
-        products.remove(productValue)
-
-        sharedPreferences.edit()
-            .putStringSet("products", products)
+        sharedPreferences
+            .edit()
+            .putStringSet(
+                "products",
+                products
+            )
             .apply()
 
+
         loadProducts()
+    }
+
+
+    // -------------------------
+    // DP HELPER
+    // -------------------------
+
+    private fun dp(
+        value: Int
+    ): Int {
+
+        return (
+                value *
+                        resources.displayMetrics.density
+                ).toInt()
     }
 }
 

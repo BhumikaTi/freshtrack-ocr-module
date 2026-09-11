@@ -22,6 +22,7 @@ import com.freshtrack.ocr.OcrSource
 import com.freshtrack.ocr.OcrTextExtractor
 import com.freshtrack.ocr.R
 import com.freshtrack.ocr.ui.CropOverlayView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.math.max
 import kotlin.math.min
@@ -91,10 +92,6 @@ class CropConfirmActivity :
     private lateinit var scaleGestureDetector:
             ScaleGestureDetector
 
-    /*
-     * True only while the user has explicitly
-     * entered crop mode.
-     */
     private var cropModeActive =
         false
 
@@ -450,14 +447,6 @@ class CropConfirmActivity :
             return
         }
 
-        /*
-         * ============================================================
-         * NORMAL MODE
-         *
-         * User did NOT activate crop mode.
-         * OCR the complete image.
-         * ============================================================
-         */
 
         if (!cropModeActive) {
 
@@ -479,15 +468,6 @@ class CropConfirmActivity :
             return
         }
 
-        /*
-         * ============================================================
-         * CROP MODE
-         *
-         * User activated crop mode.
-         * Convert the crop rectangle from the ImageView's
-         * coordinates into the original bitmap's coordinates.
-         * ============================================================
-         */
 
         Log.d(
             TAG,
@@ -539,12 +519,6 @@ class CropConfirmActivity :
                     "${croppedBitmap.height}"
         )
 
-        /*
-         * IMPORTANT:
-         *
-         * Enhance ONLY the cropped bitmap.
-         * Do NOT enhance the original bitmap here.
-         */
 
         val enhancedBitmap =
             ImagePreprocessor.enhanceForOcr(
@@ -1000,20 +974,6 @@ class CropConfirmActivity :
                 intent
             )
 
-            /*
-             * IMPORTANT:
-             *
-             * Do NOT call finish() here.
-             *
-             * Keeping this activity alive means:
-             *
-             * ResultActivity
-             *      ↓ Back
-             * CropConfirmActivity
-             *
-             * instead of returning directly
-             * to MainActivity.
-             */
         }
     }
 
@@ -1056,9 +1016,7 @@ class CropConfirmActivity :
 
     private fun showExpiryNotFoundDialog() {
 
-        AlertDialog.Builder(
-            this
-        )
+        MaterialAlertDialogBuilder(this)
             .setTitle(
                 "Failed to detect expiry date"
             )
