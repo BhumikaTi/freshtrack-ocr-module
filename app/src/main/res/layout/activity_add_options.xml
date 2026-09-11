@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_dark"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="28dp">
+
+    <!-- Back -->
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnBack"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:padding="0dp"
+        android:text="←  Back"
+        android:textAllCaps="false"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Title -->
+
+    <TextView
+        android:id="@+id/tvAddProductTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="52dp"
+        android:text="Add Product"
+        android:textColor="@color/text_primary"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Subtitle -->
+
+    <TextView
+        android:id="@+id/tvAddProductSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="How would you like to add it?"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvAddProductTitle" />
+
+    <!-- Live OCR Card -->
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnLiveOcr"
+        android:layout_width="0dp"
+        android:layout_height="82dp"
+        android:layout_marginTop="28dp"
+        android:gravity="center_vertical|start"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:text="📷   Live OCR\n      Scan with camera"
+        android:textAllCaps="false"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:lineSpacingExtra="3dp"
+        app:backgroundTint="@color/card_dark"
+        app:cornerRadius="18dp"
+        app:iconGravity="textStart"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvAddProductSubtitle"
+        app:strokeWidth="0dp" />
+
+    <!-- Gallery -->
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnGallery"
+        android:layout_width="0dp"
+        android:layout_height="82dp"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical|start"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:text="🖼   Gallery / Upload\n      Choose an image"
+        android:textAllCaps="false"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:lineSpacingExtra="3dp"
+        app:backgroundTint="@color/card_dark"
+        app:cornerRadius="18dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnLiveOcr"
+        app:strokeWidth="0dp" />
+
+    <!-- Manual -->
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAddManually"
+        android:layout_width="0dp"
+        android:layout_height="82dp"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical|start"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:text="⌨   Add Manually\n      Enter product details"
+        android:textAllCaps="false"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:lineSpacingExtra="3dp"
+        app:backgroundTint="@color/card_dark"
+        app:cornerRadius="18dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnGallery"
+        app:strokeWidth="0dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

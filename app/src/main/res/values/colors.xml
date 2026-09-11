@@ -1,10 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="background_dark">#0D0F0D</color>
-    <color name="surface_dark">#1A1F1A</color>
-    <color name="neon_green">#39FF14</color>
-    <color name="neon_green_dim">#1FAF3A</color>
-    <color name="text_primary">#EAFBEF</color>
-    <color name="text_secondary">#8CA694</color>
-    <color name="error_bright">#FF5252</color>
+
+    <!-- Main background -->
+    <color name="background_dark">#F5F3EE</color>
+
+    <!-- Cards / surfaces -->
+    <color name="card_dark">#FFFFFF</color>
+    <color name="surface_dark">#ECEAE4</color>
+
+    <!-- Primary accent -->
+    <color name="green_primary">#6B7D70</color>
+
+    <!-- Text -->
+    <color name="text_primary">#242622</color>
+    <color name="text_secondary">#777A74</color>
+
+    <!-- Status -->
+    <color name="error_bright">#C96F6F</color>
+
 </resources>

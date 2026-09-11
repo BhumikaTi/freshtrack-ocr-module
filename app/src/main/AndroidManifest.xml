@@ -22,6 +22,12 @@
         android:theme="@style/Theme.OcrTest"
         tools:targetApi="31">
         <activity
+            android:name=".ui.AddProductActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ProductListActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.ResultActivity"
             android:exported="false" />
         <activity
@@ -43,6 +49,9 @@
             android:name=".ui.CropConfirmActivity"
             android:exported="false"
             android:theme="@style/Theme.OcrTest" />
+        <activity
+            android:name=".ui.AddOptionsActivity"
+            android:exported="false" />
     </application>
 
 </manifest>
