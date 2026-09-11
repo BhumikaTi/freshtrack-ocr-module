@@ -1,92 +1,282 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_dark"
-    android:padding="24dp">
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="28dp"
+    android:paddingBottom="24dp">
 
-    <!-- Header Section -->
-    <!-- Header Section -->
+    <!-- App Name -->
+
     <TextView
-        android:id="@+id/tvAppTitle"
+        android:id="@+id/tvAppName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="56dp"
         android:text="FreshTrack"
         android:textColor="@color/text_primary"
-        android:textSize="32sp"
+        android:textSize="28sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:fontFamily="sans"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- App Tagline -->
+
     <TextView
         android:id="@+id/tvSubtitle"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:gravity="center"
-        android:text="Scan product packaging to extract expiry and manufacturing dates."
+        android:layout_marginTop="2dp"
+        android:text="know what's fresh"
         android:textColor="@color/text_secondary"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:textSize="13sp"
+        android:fontFamily="sans"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvAppTitle" />
+        app:layout_constraintTop_toBottomOf="@id/tvAppName" />
 
-    <!-- Action Buttons Container -->
-    <LinearLayout
-        android:id="@+id/buttonContainer"
+    <!-- Main Scan Card -->
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardScan"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_height="250dp"
+        android:layout_marginTop="24dp"
+        app:cardBackgroundColor="@color/card_dark"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/tvSubtitle">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnScanCamera"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:layout_marginBottom="16dp"
-            android:text="Live OCR Scanner"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:cornerRadius="16dp"
-            app:icon="@android:drawable/ic_menu_camera"
-            app:iconGravity="textStart"
-            app:iconPadding="12dp" />
+            android:layout_height="match_parent">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnChooseGallery"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            <!-- Camera Icon -->
+
+            <TextView
+                android:id="@+id/tvCameraIcon"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:gravity="center"
+                android:text="⌾"
+                android:textColor="@color/text_primary"
+                android:textSize="38sp"
+                app:layout_constraintBottom_toTopOf="@id/tvScanTitle"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_chainStyle="packed" />
+
+            <!-- Scan Title -->
+
+            <TextView
+                android:id="@+id/tvScanTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Scan a product"
+                android:textColor="@color/text_primary"
+                android:textSize="21sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvCameraIcon" />
+
+            <!-- Scan Description -->
+
+            <TextView
+                android:id="@+id/tvScanDescription"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="to check its expiry date"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvScanTitle" />
+
+            <!-- Scan Button -->
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnScanCamera"
+                android:layout_width="150dp"
+                android:layout_height="48dp"
+                android:layout_marginTop="18dp"
+                android:text="Scan now"
+                android:textAllCaps="false"
+                android:textColor="@color/background_dark"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/green_primary"
+                app:cornerRadius="24dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvScanDescription" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Products Heading -->
+
+    <TextView
+        android:id="@+id/tvProductsTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Your products"
+        android:textColor="@color/text_primary"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cardScan" />
+
+    <!-- See All -->
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnMyProducts"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:text="See all"
+        android:textAllCaps="false"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp"
+        app:layout_constraintBottom_toBottomOf="@id/tvProductsTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvProductsTitle" />
+
+    <!-- Product Card 1 -->
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardProductOne"
+        android:layout_width="0dp"
+        android:layout_height="125dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="6dp"
+        app:cardBackgroundColor="@color/card_dark"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp"
+        app:layout_constraintEnd_toStartOf="@id/cardProductTwo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvProductsTitle"
+        app:layout_constraintWidth_percent="0.48">
+
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:text="Upload Image"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:cornerRadius="16dp"
-            app:icon="@android:drawable/ic_menu_gallery"
-            app:iconGravity="textStart"
-            app:iconPadding="12dp"
-            app:strokeColor="?attr/colorPrimary"
-            app:strokeWidth="1.5dp" />
-    </LinearLayout>
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="▣"
+                android:textColor="@color/text_primary"
+                android:textSize="28sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="ketchup"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="expires in 9d"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Product Card 2 -->
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardProductTwo"
+        android:layout_width="0dp"
+        android:layout_height="125dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginStart="6dp"
+        app:cardBackgroundColor="@color/card_dark"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/cardProductOne"
+        app:layout_constraintTop_toBottomOf="@id/tvProductsTitle"
+        app:layout_constraintWidth_percent="0.48">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="▢"
+                android:textColor="@color/text_primary"
+                android:textSize="28sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="facewash"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="expires in 24d"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Status -->
 
     <TextView
         android:id="@+id/tvStatus"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
         android:gravity="center"
-        android:textColor="@color/error_bright"
-        android:textSize="14sp"
+        android:text=""
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonContainer"
-        tools:text="" />
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+

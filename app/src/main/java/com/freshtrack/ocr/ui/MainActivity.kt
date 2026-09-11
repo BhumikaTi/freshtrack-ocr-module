@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.widget.TextView
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -40,12 +39,12 @@ class MainActivity : AppCompatActivity() {
         tvStatus = findViewById(R.id.tvStatus)
 
         findViewById<MaterialButton>(R.id.btnScanCamera).setOnClickListener {
-            tvStatus.text = ""
-            onScanCameraClicked()
+            startActivity(
+                Intent(this, AddOptionsActivity::class.java)
+            )
         }
-        findViewById<MaterialButton>(R.id.btnChooseGallery).setOnClickListener {
-            tvStatus.text = ""
-            pickGalleryImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        findViewById<MaterialButton>(R.id.btnMyProducts).setOnClickListener {
+            startActivity(Intent(this, ProductListActivity::class.java))
         }
     }
 
