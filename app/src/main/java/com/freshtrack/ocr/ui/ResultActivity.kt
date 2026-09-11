@@ -24,37 +24,40 @@ class ResultActivity : AppCompatActivity() {
         btnSaveProduct = findViewById(R.id.btnSaveProduct)
         btnBack = findViewById(R.id.btnBack)
 
-        /*
-         * Get expiry date detected by OCR + parser.
-         */
-        val expiryDate = intent.getStringExtra(EXTRA_EXPIRY_DATE)
+        // --------------------------------------------------------
+        // GET PRODUCT NAME FROM OCR + EXPIRY PARSER
+        // --------------------------------------------------------
 
-        if (!expiryDate.isNullOrBlank()) {
-            etExpiryDate.setText(expiryDate)
-        }
-
-        /*
-         * Get product name detected by OCR + parser.
-         *
-         * Product name is best-effort.
-         * If parser doesn't find one, user can enter it manually.
-         */
-        val productName = intent.getStringExtra(EXTRA_PRODUCT_NAME)
+        val productName =
+            intent.getStringExtra(EXTRA_PRODUCT_NAME)
 
         if (!productName.isNullOrBlank()) {
             etProductName.setText(productName)
         }
 
-        /*
-         * Back button
-         */
+        // --------------------------------------------------------
+        // GET EXPIRY DATE FROM OCR + EXPIRY PARSER
+        // --------------------------------------------------------
+
+        val expiryDate =
+            intent.getStringExtra(EXTRA_EXPIRY_DATE)
+
+        if (!expiryDate.isNullOrBlank()) {
+            etExpiryDate.setText(expiryDate)
+        }
+
+        // --------------------------------------------------------
+        // BACK
+        // --------------------------------------------------------
+
         btnBack.setOnClickListener {
             finish()
         }
 
-        /*
-         * Save button
-         */
+        // --------------------------------------------------------
+        // SAVE PRODUCT
+        // --------------------------------------------------------
+
         btnSaveProduct.setOnClickListener {
 
             val enteredProductName =
@@ -63,39 +66,25 @@ class ResultActivity : AppCompatActivity() {
             val enteredExpiryDate =
                 etExpiryDate.text.toString().trim()
 
-            /*
-             * Validate product name
-             */
             if (enteredProductName.isEmpty()) {
-
                 etProductName.error = "Enter product name"
                 etProductName.requestFocus()
-
                 return@setOnClickListener
             }
 
-            /*
-             * Validate expiry date
-             */
             if (enteredExpiryDate.isEmpty()) {
-
                 etExpiryDate.error = "Enter expiry date"
                 etExpiryDate.requestFocus()
-
                 return@setOnClickListener
             }
 
-            /*
-             * For now, just confirm the data.
-             *
-             * Database / My Products integration
-             * will be connected separately.
-             */
             Toast.makeText(
                 this,
                 "Product ready to save!",
                 Toast.LENGTH_SHORT
             ).show()
+
+            // Room database integration will be connected here.
         }
     }
 

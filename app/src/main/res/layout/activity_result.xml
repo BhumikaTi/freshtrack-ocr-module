@@ -5,8 +5,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="@color/background_dark">
+    android:background="@color/background_dark"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,21 +18,22 @@
         android:paddingBottom="32dp">
 
         <!-- BACK -->
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBack"
             android:layout_width="wrap_content"
             android:layout_height="42dp"
             android:text="←  Back"
+            android:textAllCaps="false"
             android:textColor="@color/text_secondary"
             android:textSize="14sp"
-            android:textStyle="normal"
             android:backgroundTint="@android:color/transparent"
             android:paddingStart="0dp"
             android:paddingEnd="12dp"
-            app:cornerRadius="12dp"
-            app:rippleColor="@color/surface_dark" />
+            app:cornerRadius="12dp" />
 
         <!-- HEADER -->
+
         <TextView
             android:id="@+id/tvResultTitle"
             android:layout_width="wrap_content"
@@ -52,7 +53,8 @@
             android:textColor="@color/text_secondary"
             android:textSize="15sp" />
 
-        <!-- DETECTED CARD -->
+        <!-- PRODUCT -->
+
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -72,12 +74,12 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
                     android:text="PRODUCT"
                     android:textColor="@color/green_primary"
                     android:textSize="12sp"
                     android:textStyle="bold"
-                    android:letterSpacing="0.08"
-                    android:layout_marginBottom="8dp" />
+                    android:letterSpacing="0.08" />
 
                 <EditText
                     android:id="@+id/etProductName"
@@ -85,20 +87,20 @@
                     android:layout_height="52dp"
                     android:backgroundTint="#D7D9D3"
                     android:hint="Enter product name"
-                    android:textColor="@color/text_primary"
-                    android:textColorHint="@color/text_secondary"
-                    android:textSize="17sp"
                     android:singleLine="true"
                     android:inputType="text"
                     android:paddingStart="0dp"
-                    android:paddingEnd="0dp" />
+                    android:paddingEnd="0dp"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_secondary"
+                    android:textSize="17sp" />
 
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- EXPIRY -->
 
-        <!-- EXPIRY CARD -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -118,12 +120,12 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
                     android:text="EXPIRY DATE"
                     android:textColor="@color/green_primary"
                     android:textSize="12sp"
                     android:textStyle="bold"
-                    android:letterSpacing="0.08"
-                    android:layout_marginBottom="8dp" />
+                    android:letterSpacing="0.08" />
 
                 <EditText
                     android:id="@+id/etExpiryDate"
@@ -131,22 +133,22 @@
                     android:layout_height="56dp"
                     android:backgroundTint="#D7D9D3"
                     android:hint="MM/YYYY"
+                    android:singleLine="true"
+                    android:inputType="text"
+                    android:gravity="center_vertical"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
                     android:textColor="@color/text_primary"
                     android:textColorHint="@color/text_secondary"
                     android:textSize="23sp"
-                    android:textStyle="bold"
-                    android:gravity="center_vertical"
-                    android:singleLine="true"
-                    android:inputType="text"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp" />
+                    android:textStyle="bold" />
 
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 
-
         <!-- INFO -->
+
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -159,8 +161,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="16dp"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:padding="16dp">
 
                 <TextView
                     android:layout_width="36dp"
@@ -186,18 +188,18 @@
 
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- SAVE -->
 
-        <!-- SAVE BUTTON -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSaveProduct"
             android:layout_width="match_parent"
             android:layout_height="58dp"
             android:text="Save product"
+            android:textAllCaps="false"
             android:textColor="@android:color/white"
             android:textSize="16sp"
             android:textStyle="bold"
             android:backgroundTint="@color/green_primary"
-            android:elevation="1dp"
             app:cornerRadius="16dp" />
 
     </LinearLayout>

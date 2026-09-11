@@ -109,12 +109,17 @@ required for testing.
 
 See `TESTING.md` for detailed test results.
 
+
 ## Hand-off point for the parsing module
 
 `OcrResultListener.onTextExtracted(rawText: String, source: OcrSource)` is
 where raw, unprocessed OCR text becomes available. This is completely
 unfiltered — no trimming, regex, or cleanup happens on this side. See
 `OcrResultListener.kt` for the interface.
+
+The extracted text is then passed to the rule-based parsing module, which
+processes the text using expiry-related keywords, date patterns, and other
+predefined rules to identify the potential expiry date.
 
 ## Project structure
 
