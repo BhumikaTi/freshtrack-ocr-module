@@ -4,12 +4,19 @@
     <!-- Main background -->
     <color name="background_dark">#F5F3EE</color>
 
-    <!-- Cards / surfaces -->
+    <!-- Surfaces -->
     <color name="card_dark">#FFFFFF</color>
     <color name="surface_dark">#ECEAE4</color>
+    <color name="surface_elevated">#FFFFFF</color>
 
-    <!-- Primary accent -->
+    <!-- Primary -->
     <color name="green_primary">#6B7D70</color>
+
+    <!-- Kept for compatibility with existing screens -->
+    <!-- Not neon anymore -->
+    <color name="neon_green">#6B7D70</color>
+    <color name="neon_green_dim">#596A5F</color>
+    <color name="primary_dark">#596A5F</color>
 
     <!-- Text -->
     <color name="text_primary">#242622</color>
@@ -17,5 +24,6 @@
 
     <!-- Status -->
     <color name="error_bright">#C96F6F</color>
+    <color name="success_bright">#6B7D70</color>
 
 </resources>
