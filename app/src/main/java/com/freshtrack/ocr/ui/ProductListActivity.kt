@@ -1,22 +1,28 @@
 package com.freshtrack.ocr.ui
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.data.Product
+import com.freshtrack.ocr.data.ProductDao
+import com.freshtrack.ocr.data.ProductDatabase
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
-import java.text.SimpleDateFormat
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
 
 class ProductListActivity : AppCompatActivity() {
 
     private lateinit var productListContainer: LinearLayout
+    private lateinit var productDao: ProductDao
+    private var loadJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,6 +31,9 @@ class ProductListActivity : AppCompatActivity() {
 
         productListContainer =
             findViewById(R.id.productListContainer)
+
+        val database = ProductDatabase.getDatabase(this)
+        productDao = database.productDao()
 
         findViewById<MaterialButton>(
             R.id.btnBack
@@ -42,8 +51,6 @@ class ProductListActivity : AppCompatActivity() {
                 )
             )
         }
-
-        loadProducts()
     }
 
     override fun onResume() {
@@ -56,44 +63,23 @@ class ProductListActivity : AppCompatActivity() {
 
     private fun loadProducts() {
 
-        productListContainer.removeAllViews()
+        loadJob?.cancel()
 
-        val sharedPreferences =
-            getSharedPreferences(
-                "FreshTrackPrefs",
-                MODE_PRIVATE
-            )
+        loadJob = lifecycleScope.launch {
+            productListContainer.removeAllViews()
 
-        val products =
-            sharedPreferences
-                .getStringSet(
-                    "products",
-                    emptySet()
-                )
-                ?.toList()
-                ?: emptyList()
+            val products = productDao.getAllProducts()
 
-        if (products.isEmpty()) {
-            showEmptyMessage()
-            return
-        }
-
-        for (product in products) {
-
-            val parts = product.split("|")
-
-            if (parts.size < 2) {
-                continue
+            if (products.isEmpty()) {
+                showEmptyMessage()
+                return@launch
             }
 
-            val productName = parts[0]
-            val expiryDate = parts[1]
-
-            createProductCard(
-                productName = productName,
-                expiryDate = expiryDate,
-                fullProductValue = product
-            )
+            for (product in products) {
+                createProductCard(
+                    product = product
+                )
+            }
         }
     }
 
@@ -125,9 +111,7 @@ class ProductListActivity : AppCompatActivity() {
     }
 
     private fun createProductCard(
-        productName: String,
-        expiryDate: String,
-        fullProductValue: String
+        product: Product
     ) {
 
         // -------------------------
@@ -150,7 +134,6 @@ class ProductListActivity : AppCompatActivity() {
         card.strokeColor =
             getColor(R.color.border_light)
 
-
         // -------------------------
         // CARD CONTENT
         // -------------------------
@@ -168,7 +151,6 @@ class ProductListActivity : AppCompatActivity() {
             dp(9)
         )
 
-
         // -------------------------
         // PRODUCT NAME
         // -------------------------
@@ -177,7 +159,7 @@ class ProductListActivity : AppCompatActivity() {
             TextView(this)
 
         nameText.text =
-            productName
+            product.productName
 
         nameText.textSize =
             17f
@@ -185,7 +167,6 @@ class ProductListActivity : AppCompatActivity() {
         nameText.setTextColor(
             getColor(R.color.text_primary)
         )
-
 
         // -------------------------
         // EXPIRY DATE
@@ -195,7 +176,7 @@ class ProductListActivity : AppCompatActivity() {
             TextView(this)
 
         expiryText.text =
-            "Expires: $expiryDate"
+            "Expires: ${product.expiryDate}"
 
         expiryText.textSize =
             13f
@@ -213,13 +194,12 @@ class ProductListActivity : AppCompatActivity() {
         expiryParams.topMargin =
             dp(2)
 
-
         // -------------------------
         // STATUS
         // -------------------------
 
         val status =
-            getExpiryStatus(expiryDate)
+            getExpiryStatus(product.expiryDate)
 
         val statusText =
             TextView(this)
@@ -271,7 +251,6 @@ class ProductListActivity : AppCompatActivity() {
         statusParams.topMargin =
             dp(1)
 
-
         // -------------------------
         // BUTTON LAYOUT
         // -------------------------
@@ -284,7 +263,6 @@ class ProductListActivity : AppCompatActivity() {
 
         buttonLayout.gravity =
             Gravity.CENTER_VERTICAL
-
 
         // -------------------------
         // EDIT BUTTON
@@ -329,7 +307,6 @@ class ProductListActivity : AppCompatActivity() {
         editButton.cornerRadius =
             dp(9)
 
-
         // -------------------------
         // DELETE BUTTON
         // -------------------------
@@ -373,7 +350,6 @@ class ProductListActivity : AppCompatActivity() {
         deleteButton.cornerRadius =
             dp(9)
 
-
         // -------------------------
         // EDIT CLICK
         // -------------------------
@@ -387,13 +363,22 @@ class ProductListActivity : AppCompatActivity() {
                 )
 
             intent.putExtra(
-                "productValue",
-                fullProductValue
+                "productId",
+                product.id
+            )
+
+            intent.putExtra(
+                "productName",
+                product.productName
+            )
+
+            intent.putExtra(
+                "expiryDate",
+                product.expiryDate
             )
 
             startActivity(intent)
         }
-
 
         // -------------------------
         // DELETE CLICK
@@ -401,11 +386,13 @@ class ProductListActivity : AppCompatActivity() {
 
         deleteButton.setOnClickListener {
 
-            deleteProduct(
-                fullProductValue
-            )
-        }
+            lifecycleScope.launch {
 
+                productDao.deleteProduct(product)
+
+                loadProducts()
+            }
+        }
 
         // -------------------------
         // BUTTON SIZES
@@ -425,7 +412,6 @@ class ProductListActivity : AppCompatActivity() {
             0
         )
 
-
         val deleteParams =
             LinearLayout.LayoutParams(
                 0,
@@ -440,7 +426,6 @@ class ProductListActivity : AppCompatActivity() {
             0
         )
 
-
         buttonLayout.addView(
             editButton,
             editParams
@@ -450,7 +435,6 @@ class ProductListActivity : AppCompatActivity() {
             deleteButton,
             deleteParams
         )
-
 
         // -------------------------
         // ADD CONTENT TO CARD
@@ -478,7 +462,6 @@ class ProductListActivity : AppCompatActivity() {
             cardLayout
         )
 
-
         // -------------------------
         // CARD SPACING
         // -------------------------
@@ -502,7 +485,6 @@ class ProductListActivity : AppCompatActivity() {
         )
     }
 
-
     // -------------------------
     // EXPIRY STATUS
     // -------------------------
@@ -513,16 +495,599 @@ class ProductListActivity : AppCompatActivity() {
 
         return try {
 
-            val dateFormat =
-                SimpleDateFormat(
-                    "dd MMM yyyy",
-                    Locale.getDefault()
+            val date =
+                expiryDate.trim()
+
+            val expiryCalendar =
+                Calendar.getInstance()
+
+            var parsed = false
+
+            // --------------------------------
+            // FORMAT 1: dd/MM/yyyy
+            // Example: 16/05/2026
+            // --------------------------------
+
+            if (
+                date.matches(
+                    Regex(
+                        "^\\d{1,2}/\\d{1,2}/\\d{4}$"
+                    )
                 )
+            ) {
 
-            val expiry =
-                dateFormat.parse(expiryDate)
-                    ?: return "Status unavailable"
+                val parts =
+                    date.split("/")
 
+                val day =
+                    parts[0].toInt()
+
+                val month =
+                    parts[1].toInt()
+
+                val year =
+                    parts[2].toInt()
+
+                if (
+                    month in 1..12 &&
+                    day in 1..31
+                ) {
+
+                    expiryCalendar.clear()
+
+                    expiryCalendar.set(
+                        year,
+                        month - 1,
+                        day
+                    )
+
+                    parsed = true
+                }
+            }
+
+            // --------------------------------
+            // FORMAT 2: dd Month yyyy
+            // Example: 25 September 2026
+            // --------------------------------
+
+            if (!parsed) {
+
+                val match =
+                    Regex(
+                        "(?i)^(\\d{1,2})\\s+" +
+                                "(January|February|March|April|May|June|July|August|September|October|November|December)" +
+                                "\\s+(\\d{4})$"
+                    ).find(date)
+
+                if (match != null) {
+
+                    val day =
+                        match.groupValues[1].toInt()
+
+                    val monthName =
+                        match.groupValues[2]
+                            .lowercase(Locale.ENGLISH)
+
+                    val year =
+                        match.groupValues[3].toInt()
+
+                    val month =
+                        when (monthName) {
+
+                            "january" ->
+                                Calendar.JANUARY
+
+                            "february" ->
+                                Calendar.FEBRUARY
+
+                            "march" ->
+                                Calendar.MARCH
+
+                            "april" ->
+                                Calendar.APRIL
+
+                            "may" ->
+                                Calendar.MAY
+
+                            "june" ->
+                                Calendar.JUNE
+
+                            "july" ->
+                                Calendar.JULY
+
+                            "august" ->
+                                Calendar.AUGUST
+
+                            "september" ->
+                                Calendar.SEPTEMBER
+
+                            "october" ->
+                                Calendar.OCTOBER
+
+                            "november" ->
+                                Calendar.NOVEMBER
+
+                            "december" ->
+                                Calendar.DECEMBER
+
+                            else -> -1
+                        }
+
+                    if (month >= 0) {
+
+                        expiryCalendar.clear()
+
+                        expiryCalendar.set(
+                            year,
+                            month,
+                            day
+                        )
+
+                        parsed = true
+                    }
+                }
+            }
+
+            // --------------------------------
+            // FORMAT 3: dd MMM yyyy
+            // Examples:
+            // 16 Oct 2026
+            // 25 Sep 2026
+            // 25 Sept 2026
+            // --------------------------------
+
+            if (!parsed) {
+
+                val match =
+                    Regex(
+                        "(?i)^(\\d{1,2})\\s+" +
+                                "(Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|Sept|September|Oct|October|Nov|November|Dec|December)" +
+                                "\\s+(\\d{4})$"
+                    ).find(date)
+
+                if (match != null) {
+
+                    val day =
+                        match.groupValues[1].toInt()
+
+                    val monthName =
+                        match.groupValues[2]
+                            .lowercase(Locale.ENGLISH)
+
+                    val year =
+                        match.groupValues[3].toInt()
+
+                    val month =
+                        when (monthName) {
+
+                            "jan",
+                            "january" ->
+                                Calendar.JANUARY
+
+                            "feb",
+                            "february" ->
+                                Calendar.FEBRUARY
+
+                            "mar",
+                            "march" ->
+                                Calendar.MARCH
+
+                            "apr",
+                            "april" ->
+                                Calendar.APRIL
+
+                            "may" ->
+                                Calendar.MAY
+
+                            "jun",
+                            "june" ->
+                                Calendar.JUNE
+
+                            "jul",
+                            "july" ->
+                                Calendar.JULY
+
+                            "aug",
+                            "august" ->
+                                Calendar.AUGUST
+
+                            "sep",
+                            "sept",
+                            "september" ->
+                                Calendar.SEPTEMBER
+
+                            "oct",
+                            "october" ->
+                                Calendar.OCTOBER
+
+                            "nov",
+                            "november" ->
+                                Calendar.NOVEMBER
+
+                            "dec",
+                            "december" ->
+                                Calendar.DECEMBER
+
+                            else -> -1
+                        }
+
+                    if (month >= 0) {
+
+                        expiryCalendar.clear()
+
+                        expiryCalendar.set(
+                            year,
+                            month,
+                            day
+                        )
+
+                        parsed = true
+                    }
+                }
+            }
+
+            // --------------------------------
+            // FORMAT 4: MM/yyyy
+            // Example: 12/2026
+            //
+            // Uses LAST DAY of month
+            // --------------------------------
+
+            if (!parsed) {
+
+                if (
+                    date.matches(
+                        Regex(
+                            "^\\d{1,2}/\\d{4}$"
+                        )
+                    )
+                ) {
+
+                    val parts =
+                        date.split("/")
+
+                    val month =
+                        parts[0].toInt()
+
+                    val year =
+                        parts[1].toInt()
+
+                    if (month in 1..12) {
+
+                        expiryCalendar.clear()
+
+                        expiryCalendar.set(
+                            year,
+                            month - 1,
+                            1
+                        )
+
+                        expiryCalendar.set(
+                            Calendar.DAY_OF_MONTH,
+                            expiryCalendar.getActualMaximum(
+                                Calendar.DAY_OF_MONTH
+                            )
+                        )
+
+                        parsed = true
+                    }
+                }
+            }
+
+            // --------------------------------
+            // FORMAT 5: MMM yyyy
+            // Example: APR 2026
+            //
+            // Uses LAST DAY of month
+            // --------------------------------
+
+            if (!parsed) {
+
+                val match =
+                    Regex(
+                        "(?i)^(Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|Sept|September|Oct|October|Nov|November|Dec|December)" +
+                                "\\s+(\\d{4})$"
+                    ).find(date)
+
+                if (match != null) {
+
+                    val monthName =
+                        match.groupValues[1]
+                            .lowercase(Locale.ENGLISH)
+
+                    val year =
+                        match.groupValues[2].toInt()
+
+                    val month =
+                        when (monthName) {
+
+                            "jan",
+                            "january" ->
+                                Calendar.JANUARY
+
+                            "feb",
+                            "february" ->
+                                Calendar.FEBRUARY
+
+                            "mar",
+                            "march" ->
+                                Calendar.MARCH
+
+                            "apr",
+                            "april" ->
+                                Calendar.APRIL
+
+                            "may" ->
+                                Calendar.MAY
+
+                            "jun",
+                            "june" ->
+                                Calendar.JUNE
+
+                            "jul",
+                            "july" ->
+                                Calendar.JULY
+
+                            "aug",
+                            "august" ->
+                                Calendar.AUGUST
+
+                            "sep",
+                            "sept",
+                            "september" ->
+                                Calendar.SEPTEMBER
+
+                            "oct",
+                            "october" ->
+                                Calendar.OCTOBER
+
+                            "nov",
+                            "november" ->
+                                Calendar.NOVEMBER
+
+                            "dec",
+                            "december" ->
+                                Calendar.DECEMBER
+
+                            else -> -1
+                        }
+
+                    if (month >= 0) {
+
+                        expiryCalendar.clear()
+
+                        expiryCalendar.set(
+                            year,
+                            month,
+                            1
+                        )
+
+                        expiryCalendar.set(
+                            Calendar.DAY_OF_MONTH,
+                            expiryCalendar.getActualMaximum(
+                                Calendar.DAY_OF_MONTH
+                            )
+                        )
+
+                        parsed = true
+                    }
+                }
+            }
+
+            // --------------------------------
+            // FORMAT 6: MMM/yyyy
+            // Example: SEP/2026
+            //
+            // Uses LAST DAY of month
+            // --------------------------------
+
+            if (!parsed) {
+
+                val match =
+                    Regex(
+                        "(?i)^(Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|Sept|September|Oct|October|Nov|November|Dec|December)" +
+                                "/(\\d{4})$"
+                    ).find(date)
+
+                if (match != null) {
+
+                    val monthName =
+                        match.groupValues[1]
+                            .lowercase(Locale.ENGLISH)
+
+                    val year =
+                        match.groupValues[2].toInt()
+
+                    val month =
+                        when (monthName) {
+
+                            "jan",
+                            "january" ->
+                                Calendar.JANUARY
+
+                            "feb",
+                            "february" ->
+                                Calendar.FEBRUARY
+
+                            "mar",
+                            "march" ->
+                                Calendar.MARCH
+
+                            "apr",
+                            "april" ->
+                                Calendar.APRIL
+
+                            "may" ->
+                                Calendar.MAY
+
+                            "jun",
+                            "june" ->
+                                Calendar.JUNE
+
+                            "jul",
+                            "july" ->
+                                Calendar.JULY
+
+                            "aug",
+                            "august" ->
+                                Calendar.AUGUST
+
+                            "sep",
+                            "sept",
+                            "september" ->
+                                Calendar.SEPTEMBER
+
+                            "oct",
+                            "october" ->
+                                Calendar.OCTOBER
+
+                            "nov",
+                            "november" ->
+                                Calendar.NOVEMBER
+
+                            "dec",
+                            "december" ->
+                                Calendar.DECEMBER
+
+                            else -> -1
+                        }
+
+                    if (month >= 0) {
+
+                        expiryCalendar.clear()
+
+                        expiryCalendar.set(
+                            year,
+                            month,
+                            1
+                        )
+
+                        expiryCalendar.set(
+                            Calendar.DAY_OF_MONTH,
+                            expiryCalendar.getActualMaximum(
+                                Calendar.DAY_OF_MONTH
+                            )
+                        )
+
+                        parsed = true
+                    }
+                }
+            }
+
+            // --------------------------------
+            // FORMAT 7: MMM yy
+            // Example: SEP 26
+            //
+            // Uses LAST DAY of month
+            // --------------------------------
+
+            if (!parsed) {
+
+                val match =
+                    Regex(
+                        "(?i)^(Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|Sept|September|Oct|October|Nov|November|Dec|December)" +
+                                "\\s+(\\d{2})$"
+                    ).find(date)
+
+                if (match != null) {
+
+                    val monthName =
+                        match.groupValues[1]
+                            .lowercase(Locale.ENGLISH)
+
+                    val shortYear =
+                        match.groupValues[2].toInt()
+
+                    val year =
+                        2000 + shortYear
+
+                    val month =
+                        when (monthName) {
+
+                            "jan",
+                            "january" ->
+                                Calendar.JANUARY
+
+                            "feb",
+                            "february" ->
+                                Calendar.FEBRUARY
+
+                            "mar",
+                            "march" ->
+                                Calendar.MARCH
+
+                            "apr",
+                            "april" ->
+                                Calendar.APRIL
+
+                            "may" ->
+                                Calendar.MAY
+
+                            "jun",
+                            "june" ->
+                                Calendar.JUNE
+
+                            "jul",
+                            "july" ->
+                                Calendar.JULY
+
+                            "aug",
+                            "august" ->
+                                Calendar.AUGUST
+
+                            "sep",
+                            "sept",
+                            "september" ->
+                                Calendar.SEPTEMBER
+
+                            "oct",
+                            "october" ->
+                                Calendar.OCTOBER
+
+                            "nov",
+                            "november" ->
+                                Calendar.NOVEMBER
+
+                            "dec",
+                            "december" ->
+                                Calendar.DECEMBER
+
+                            else -> -1
+                        }
+
+                    if (month >= 0) {
+
+                        expiryCalendar.clear()
+
+                        expiryCalendar.set(
+                            year,
+                            month,
+                            1
+                        )
+
+                        expiryCalendar.set(
+                            Calendar.DAY_OF_MONTH,
+                            expiryCalendar.getActualMaximum(
+                                Calendar.DAY_OF_MONTH
+                            )
+                        )
+
+                        parsed = true
+                    }
+                }
+            }
+
+            // --------------------------------
+            // IF DATE COULD NOT BE PARSED
+            // --------------------------------
+
+            if (!parsed) {
+                return "Status unavailable"
+            }
+
+            // --------------------------------
+            // TODAY
+            // --------------------------------
 
             val today =
                 Calendar.getInstance()
@@ -547,12 +1112,9 @@ class ProductListActivity : AppCompatActivity() {
                 0
             )
 
-
-            val expiryCalendar =
-                Calendar.getInstance()
-
-            expiryCalendar.time =
-                expiry
+            // --------------------------------
+            // EXPIRY DATE
+            // --------------------------------
 
             expiryCalendar.set(
                 Calendar.HOUR_OF_DAY,
@@ -574,16 +1136,21 @@ class ProductListActivity : AppCompatActivity() {
                 0
             )
 
+            // --------------------------------
+            // CALCULATE DAYS LEFT
+            // --------------------------------
 
             val difference =
                 expiryCalendar.timeInMillis -
                         today.timeInMillis
 
-
             val daysLeft =
                 difference /
                         (1000 * 60 * 60 * 24)
 
+            // --------------------------------
+            // STATUS
+            // --------------------------------
 
             when {
 
@@ -610,49 +1177,6 @@ class ProductListActivity : AppCompatActivity() {
         }
     }
 
-
-    // -------------------------
-    // DELETE PRODUCT
-    // -------------------------
-
-    private fun deleteProduct(
-        productValue: String
-    ) {
-
-        val sharedPreferences =
-            getSharedPreferences(
-                "FreshTrackPrefs",
-                MODE_PRIVATE
-            )
-
-        val products =
-            sharedPreferences
-                .getStringSet(
-                    "products",
-                    emptySet()
-                )
-                ?.toMutableSet()
-                ?: mutableSetOf()
-
-
-        products.remove(
-            productValue
-        )
-
-
-        sharedPreferences
-            .edit()
-            .putStringSet(
-                "products",
-                products
-            )
-            .apply()
-
-
-        loadProducts()
-    }
-
-
     // -------------------------
     // DP HELPER
     // -------------------------
@@ -666,7 +1190,11 @@ class ProductListActivity : AppCompatActivity() {
                         resources.displayMetrics.density
                 ).toInt()
     }
+
+    override fun onDestroy() {
+
+        loadJob?.cancel()
+
+        super.onDestroy()
+    }
 }
-
-
-
