@@ -4,10 +4,17 @@ import android.os.Bundle
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.data.Product
+import com.freshtrack.ocr.data.ProductDatabase
+import com.freshtrack.ocr.data.ProductDao
 import com.google.android.material.button.MaterialButton
+import kotlinx.coroutines.launch
 
 class ResultActivity : AppCompatActivity() {
+
+    private lateinit var productDao: ProductDao
 
     private lateinit var etProductName: EditText
     private lateinit var etExpiryDate: EditText
@@ -18,6 +25,9 @@ class ResultActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_result)
+
+        val database = ProductDatabase.getDatabase(this)
+        productDao = database.productDao()
 
         etProductName = findViewById(R.id.etProductName)
         etExpiryDate = findViewById(R.id.etExpiryDate)
@@ -57,6 +67,7 @@ class ResultActivity : AppCompatActivity() {
         // --------------------------------------------------------
         // SAVE PRODUCT
         // --------------------------------------------------------
+
         btnSaveProduct.setOnClickListener {
             val enteredProductName =
                 etProductName.text.toString().trim()
@@ -74,30 +85,21 @@ class ResultActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val sharedPreferences = getSharedPreferences(
-                "FreshTrackPrefs",
-                MODE_PRIVATE
-            )
+            lifecycleScope.launch {
+                val product = Product(
+                    productName = enteredProductName,
+                    expiryDate = enteredExpiryDate,
+                    rawOcrText = ""
+                )
 
-            val products = sharedPreferences
-                .getStringSet("products", emptySet())
-                ?.toMutableSet()
-                ?: mutableSetOf()
+                productDao.insertProduct(product)
 
-            val productValue =
-                "$enteredProductName|$enteredExpiryDate"
-
-            products.add(productValue)
-
-            sharedPreferences.edit()
-                .putStringSet("products", products)
-                .apply()
-
-            Toast.makeText(
-                this,
-                "Product saved successfully!",
-                Toast.LENGTH_SHORT
-            ).show()
+                Toast.makeText(
+                    this@ResultActivity,
+                    "Product saved successfully!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
 

@@ -4,9 +4,14 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.data.Product
+import com.freshtrack.ocr.data.ProductDao
+import com.freshtrack.ocr.data.ProductDatabase
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -24,25 +29,43 @@ class AddProductActivity : AppCompatActivity() {
 
     private lateinit var etProductName: TextInputEditText
     private lateinit var etExpiryDate: TextInputEditText
+    private lateinit var productDao: ProductDao
 
-    private var oldProductValue: String? = null
+    // Room product ID.
+    // Null = adding a new product.
+    // Non-null = editing an existing product.
+    private var productId: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_add_product)
 
         etProductName = findViewById(R.id.etProductName)
         etExpiryDate = findViewById(R.id.etExpiryDate)
 
-        oldProductValue = intent.getStringExtra("productValue")
+        // Initialize Room database
+        val database = ProductDatabase.getDatabase(this)
+        productDao = database.productDao()
 
-        oldProductValue?.let {
-            val parts = it.split("|")
+        // Check whether this screen was opened for editing
+        productId = intent.getIntExtra("productId", -1).takeIf {
+            it != -1
+        }
 
-            if (parts.size >= 2) {
-                etProductName.setText(parts[0])
-                etExpiryDate.setText(parts[1])
-            }
+        // Get existing product information when editing
+        val existingProductName =
+            intent.getStringExtra("productName")
+
+        val existingExpiryDate =
+            intent.getStringExtra("expiryDate")
+
+        if (!existingProductName.isNullOrBlank()) {
+            etProductName.setText(existingProductName)
+        }
+
+        if (!existingExpiryDate.isNullOrBlank()) {
+            etExpiryDate.setText(existingExpiryDate)
         }
 
         findViewById<MaterialButton>(R.id.btnBack).setOnClickListener {
@@ -57,6 +80,7 @@ class AddProductActivity : AppCompatActivity() {
             saveProduct()
         }
     }
+
     private fun showDatePicker() {
 
         val calendar = Calendar.getInstance()
@@ -67,7 +91,7 @@ class AddProductActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), dp(8), dp(12), dp(4))
             setBackgroundColor(
-                Color.argb(235,255,255,255)
+                Color.argb(235, 255, 255, 255)
             )
         }
 
@@ -347,7 +371,9 @@ class AddProductActivity : AppCompatActivity() {
                         )
 
                         etExpiryDate.setText(
-                            dateFormat.format(selectedCalendar.time)
+                            dateFormat.format(
+                                selectedCalendar.time
+                            )
                         )
 
                         dialog.dismiss()
@@ -407,11 +433,8 @@ class AddProductActivity : AppCompatActivity() {
         }
 
         // -------------------------
-        // Dialog buttons
-        // -------------------------
-
-
         // Initial calendar
+        // -------------------------
 
         updateCalendar()
 
@@ -424,14 +447,21 @@ class AddProductActivity : AppCompatActivity() {
             WindowManager.LayoutParams.WRAP_CONTENT
         )
     }
+
     private fun dp(value: Int): Int {
         return (
-                value * resources.displayMetrics.density
+                value *
+                        resources.displayMetrics.density
                 ).toInt()
     }
+
     private fun saveProduct() {
-        val productName = etProductName.text.toString().trim()
-        val expiryDate = etExpiryDate.text.toString().trim()
+
+        val productName =
+            etProductName.text.toString().trim()
+
+        val expiryDate =
+            etExpiryDate.text.toString().trim()
 
         if (productName.isEmpty()) {
             etProductName.error = "Enter product name"
@@ -443,49 +473,67 @@ class AddProductActivity : AppCompatActivity() {
             return
         }
 
-        val sharedPreferences = getSharedPreferences(
-            "FreshTrackPrefs",
-            MODE_PRIVATE
-        )
+        lifecycleScope.launch {
 
-        val products = sharedPreferences
-            .getStringSet("products", emptySet())
-            ?.toMutableSet()
-            ?: mutableSetOf()
+            val existingId = productId
 
-        val newProductValue = "$productName|$expiryDate"
+            if (existingId == null) {
 
-        oldProductValue?.let {
-            products.remove(it)
-        }
+                // -------------------------
+                // ADD NEW PRODUCT
+                // -------------------------
 
-        products.add(newProductValue)
+                val product = Product(
+                    productName = productName,
+                    expiryDate = expiryDate,
+                    rawOcrText = ""
+                )
 
-        sharedPreferences.edit()
-            .putStringSet("products", products)
-            .apply()
+                productDao.insertProduct(product)
 
-        Toast.makeText(
-            this,
-            if (oldProductValue == null) {
-                "Product saved successfully!"
+                Toast.makeText(
+                    this@AddProductActivity,
+                    "Product saved successfully!",
+                    Toast.LENGTH_SHORT
+                ).show()
+
             } else {
-                "Product updated successfully!"
-            },
-            Toast.LENGTH_SHORT
-        ).show()
 
-        val intent = Intent(
-            this,
-            ProductListActivity::class.java
-        )
+                // -------------------------
+                // UPDATE EXISTING PRODUCT
+                // -------------------------
 
-        intent.flags =
-            Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+                val updatedProduct = Product(
+                    id = existingId,
+                    productName = productName,
+                    expiryDate = expiryDate,
+                    rawOcrText = ""
+                )
 
-        startActivity(intent)
-        finish()
+                productDao.updateProduct(updatedProduct)
+
+                Toast.makeText(
+                    this@AddProductActivity,
+                    "Product updated successfully!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            // Return to Product List
+
+            val intent = Intent(
+                this@AddProductActivity,
+                ProductListActivity::class.java
+            )
+
+            intent.flags =
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+
+            startActivity(intent)
+
+            finish()
+        }
     }
 }
 
