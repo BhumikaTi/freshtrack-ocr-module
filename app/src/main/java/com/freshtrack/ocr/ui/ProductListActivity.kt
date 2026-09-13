@@ -211,31 +211,26 @@ class ProductListActivity : AppCompatActivity() {
             12f
 
         when {
-
-            status.startsWith("Expired") -> {
-
+            status.startsWith("Expired") ||
+                    status.startsWith("Expires today") -> {
                 statusText.setTextColor(
                     getColor(R.color.error_bright)
                 )
             }
 
-            status.startsWith("Expires today") ||
-                    status.startsWith("Expires soon") -> {
-
+            status.startsWith("Expires soon") -> {
                 statusText.setTextColor(
                     getColor(R.color.warning_amber)
                 )
             }
 
             status.startsWith("Fresh") -> {
-
                 statusText.setTextColor(
                     getColor(R.color.green_primary)
                 )
             }
 
             else -> {
-
                 statusText.setTextColor(
                     getColor(R.color.text_secondary)
                 )
