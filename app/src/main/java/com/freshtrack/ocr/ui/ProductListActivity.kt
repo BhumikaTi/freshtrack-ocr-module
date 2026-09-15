@@ -1,6 +1,8 @@
 package com.freshtrack.ocr.ui
 
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.LinearLayout
@@ -66,9 +68,11 @@ class ProductListActivity : AppCompatActivity() {
         loadJob?.cancel()
 
         loadJob = lifecycleScope.launch {
+
             productListContainer.removeAllViews()
 
-            val products = productDao.getAllProducts()
+            val products =
+                productDao.getAllProducts()
 
             if (products.isEmpty()) {
                 showEmptyMessage()
@@ -85,11 +89,14 @@ class ProductListActivity : AppCompatActivity() {
 
     private fun showEmptyMessage() {
 
-        val emptyText = TextView(this)
+        val emptyText =
+            TextView(this)
 
-        emptyText.text = "No products added yet."
+        emptyText.text =
+            "No products added yet."
 
-        emptyText.textSize = 14f
+        emptyText.textSize =
+            14f
 
         emptyText.gravity =
             Gravity.CENTER
@@ -211,26 +218,31 @@ class ProductListActivity : AppCompatActivity() {
             12f
 
         when {
+
             status.startsWith("Expired") ||
                     status.startsWith("Expires today") -> {
+
                 statusText.setTextColor(
                     getColor(R.color.error_bright)
                 )
             }
 
             status.startsWith("Expires soon") -> {
+
                 statusText.setTextColor(
                     getColor(R.color.warning_amber)
                 )
             }
 
             status.startsWith("Fresh") -> {
+
                 statusText.setTextColor(
                     getColor(R.color.green_primary)
                 )
             }
 
             else -> {
+
                 statusText.setTextColor(
                     getColor(R.color.text_secondary)
                 )
@@ -264,11 +276,7 @@ class ProductListActivity : AppCompatActivity() {
         // -------------------------
 
         val editButton =
-            MaterialButton(
-                this,
-                null,
-                com.google.android.material.R.attr.materialButtonOutlinedStyle
-            )
+            MaterialButton(this)
 
         editButton.text =
             "Edit"
@@ -283,11 +291,29 @@ class ProductListActivity : AppCompatActivity() {
             getColor(R.color.green_primary)
         )
 
-        editButton.minHeight = 0
-        editButton.minWidth = 0
+        // White background
+        editButton.backgroundTintList =
+            ColorStateList.valueOf(
+                Color.WHITE
+            )
 
-        editButton.insetTop = 0
-        editButton.insetBottom = 0
+        // Light outline
+        editButton.strokeColor =
+            ColorStateList.valueOf(
+                getColor(R.color.border_light)
+            )
+
+        editButton.minHeight =
+            0
+
+        editButton.minWidth =
+            0
+
+        editButton.insetTop =
+            0
+
+        editButton.insetBottom =
+            0
 
         editButton.setPadding(
             0,
@@ -307,11 +333,7 @@ class ProductListActivity : AppCompatActivity() {
         // -------------------------
 
         val deleteButton =
-            MaterialButton(
-                this,
-                null,
-                com.google.android.material.R.attr.materialButtonOutlinedStyle
-            )
+            MaterialButton(this)
 
         deleteButton.text =
             "Delete"
@@ -326,11 +348,29 @@ class ProductListActivity : AppCompatActivity() {
             getColor(R.color.green_primary)
         )
 
-        deleteButton.minHeight = 0
-        deleteButton.minWidth = 0
+        // White background
+        deleteButton.backgroundTintList =
+            ColorStateList.valueOf(
+                Color.WHITE
+            )
 
-        deleteButton.insetTop = 0
-        deleteButton.insetBottom = 0
+        // Light outline
+        deleteButton.strokeColor =
+            ColorStateList.valueOf(
+                getColor(R.color.border_light)
+            )
+
+        deleteButton.minHeight =
+            0
+
+        deleteButton.minWidth =
+            0
+
+        deleteButton.insetTop =
+            0
+
+        deleteButton.insetBottom =
+            0
 
         deleteButton.setPadding(
             0,
@@ -1057,6 +1097,57 @@ class ProductListActivity : AppCompatActivity() {
                         expiryCalendar.set(
                             year,
                             month,
+                            1
+                        )
+
+                        expiryCalendar.set(
+                            Calendar.DAY_OF_MONTH,
+                            expiryCalendar.getActualMaximum(
+                                Calendar.DAY_OF_MONTH
+                            )
+                        )
+
+                        parsed = true
+                    }
+                }
+            }
+
+            // --------------------------------
+            // FORMAT 8: MM/yy
+            // Example: 04/27
+            //
+            // Uses LAST DAY of month
+            // --------------------------------
+
+            if (!parsed) {
+
+                if (
+                    date.matches(
+                        Regex(
+                            "^\\d{1,2}/\\d{2}$"
+                        )
+                    )
+                ) {
+
+                    val parts =
+                        date.split("/")
+
+                    val month =
+                        parts[0].toInt()
+
+                    val shortYear =
+                        parts[1].toInt()
+
+                    val year =
+                        2000 + shortYear
+
+                    if (month in 1..12) {
+
+                        expiryCalendar.clear()
+
+                        expiryCalendar.set(
+                            year,
+                            month - 1,
                             1
                         )
 
