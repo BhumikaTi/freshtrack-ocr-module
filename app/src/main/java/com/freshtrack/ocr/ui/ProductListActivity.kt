@@ -62,7 +62,6 @@ class ProductListActivity : AppCompatActivity() {
             loadProducts()
         }
     }
-
     private fun loadProducts() {
 
         loadJob?.cancel()
@@ -79,10 +78,46 @@ class ProductListActivity : AppCompatActivity() {
                 return@launch
             }
 
-            for (product in products) {
+            val sortedProducts = products.sortedBy {
+                getExpirySortKey(
+                    getExpiryStatus(it.expiryDate)
+                )
+            }
+
+            for (product in sortedProducts) {
                 createProductCard(
                     product = product
                 )
+            }
+        }
+    }
+
+    private fun getExpirySortKey(
+        status: String
+    ): Long {
+
+        return when {
+
+            status == "Expired" -> {
+                Long.MIN_VALUE
+            }
+
+            status == "Expires today" -> {
+                0L
+            }
+
+            status.startsWith("Expires soon") ||
+                    status.startsWith("Fresh") -> {
+
+                Regex("\\d+")
+                    .find(status)
+                    ?.value
+                    ?.toLong()
+                    ?: Long.MAX_VALUE
+            }
+
+            else -> {
+                Long.MAX_VALUE
             }
         }
     }
@@ -204,6 +239,7 @@ class ProductListActivity : AppCompatActivity() {
         // -------------------------
         // STATUS
         // -------------------------
+
 
         val status =
             getExpiryStatus(product.expiryDate)
