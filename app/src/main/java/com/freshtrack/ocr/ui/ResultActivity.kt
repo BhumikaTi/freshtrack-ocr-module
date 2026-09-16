@@ -1,6 +1,7 @@
 package com.freshtrack.ocr.ui
 
 import android.os.Bundle
+import android.content.Intent
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -99,6 +100,16 @@ class ResultActivity : AppCompatActivity() {
                     "Product saved successfully!",
                     Toast.LENGTH_SHORT
                 ).show()
+
+                // Open My Products after saving
+                startActivity(
+                    Intent(
+                        this@ResultActivity,
+                        ProductListActivity::class.java
+                    )
+                )
+
+                finish()
             }
         }
     }
