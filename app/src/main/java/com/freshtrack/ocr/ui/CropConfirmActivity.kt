@@ -1034,7 +1034,7 @@ class CropConfirmActivity :
                 val intent =
                     Intent(
                         this,
-                        ManualEntryActivity::class.java
+                        AddProductActivity::class.java
                     )
 
                 startActivity(

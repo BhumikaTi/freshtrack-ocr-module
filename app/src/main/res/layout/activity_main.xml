@@ -59,46 +59,40 @@
                 android:orientation="vertical"
                 android:padding="22dp">
 
-                <!-- Scan icon -->
                 <TextView
                     android:layout_width="40dp"
                     android:layout_height="40dp"
+                    android:layout_gravity="center_horizontal"
                     android:gravity="center"
                     android:text="⌁"
-                    android:layout_marginStart="110dp"
                     android:textColor="@color/green_primary"
                     android:textSize="30sp"
                     android:textStyle="bold" />
 
-                <!-- Title -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
                     android:layout_marginTop="10dp"
                     android:text="Scan a product"
-                    android:layout_marginStart="70dp"
-                    android:layout_marginEnd="10dp"
                     android:textColor="@color/text_primary"
                     android:textSize="22sp"
                     android:textStyle="bold" />
 
-                <!-- Description -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
                     android:layout_marginTop="4dp"
-                    android:layout_marginStart="70dp"
                     android:text="to check its expiry date"
                     android:textColor="@color/text_secondary"
                     android:textSize="15sp" />
 
-                <!-- Scan button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnScanCamera"
                     android:layout_width="200dp"
                     android:layout_height="52dp"
-                    android:layout_marginStart="40dp"
-                    android:layout_marginEnd="40dp"
+                    android:layout_gravity="center_horizontal"
                     android:layout_marginTop="15dp"
                     android:text="Scan now"
                     android:textAllCaps="false"
