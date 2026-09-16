@@ -66,51 +66,7 @@
         app:srcCompat="@android:drawable/ic_menu_send"
         app:elevation="6dp" />
 
-    <!-- MANUAL DATE ENTRY -->
-    <LinearLayout
-        android:id="@+id/manualEntryContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_marginBottom="48dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="16dp"
-        android:paddingTop="5dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="5dp"
-        android:background="#E6000000">
 
-        <EditText
-            android:id="@+id/etManualText"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:layout_marginTop="4dp"
-            android:hint="Or type the date manually..."
-            android:singleLine="true"
-            android:inputType="text"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
-            android:textColor="@android:color/white"
-            android:textColorHint="#BDBDBD"
-            android:textSize="15sp"
-            android:backgroundTint="#D0D0D0" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnUseManualText"
-            android:layout_width="wrap_content"
-            android:layout_height="45dp"
-            android:layout_marginStart="10dp"
-            android:text="Use"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:backgroundTint="@color/green_primary"
-            app:cornerRadius="12dp"
-            app:elevation="2dp" />
-
-    </LinearLayout>
 
 </FrameLayout>
