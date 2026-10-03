@@ -24,12 +24,31 @@ import android.view.WindowManager
 import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 
 class AddProductActivity : AppCompatActivity() {
 
     private lateinit var etProductName: TextInputEditText
     private lateinit var etExpiryDate: TextInputEditText
+    private lateinit var actvCategory: AutoCompleteTextView
     private lateinit var productDao: ProductDao
+
+    private val categories = listOf(
+        "Fruits & Vegetables",
+        "Dairy",
+        "Meat & Seafood",
+        "Bakery",
+        "Beverages",
+        "Snacks",
+        "Pantry",
+        "Personal Care",
+        "Cleaning Supplies",
+        "Pet Supplies",
+        "Cosmetics",
+        "Medicines",
+        "Other"
+    )
 
     // Room product ID.
     // Null = adding a new product.
@@ -43,6 +62,17 @@ class AddProductActivity : AppCompatActivity() {
 
         etProductName = findViewById(R.id.etProductName)
         etExpiryDate = findViewById(R.id.etExpiryDate)
+        actvCategory = findViewById(R.id.actvCategory)
+
+// Set up category dropdown
+        val categoryAdapter = ArrayAdapter(
+            this,
+            R.layout.item_category_dropdown,
+            categories
+        )
+
+        actvCategory.setAdapter(categoryAdapter)
+        actvCategory.setText("Other", false)
 
         // Initialize Room database
         val database = ProductDatabase.getDatabase(this)
@@ -59,6 +89,13 @@ class AddProductActivity : AppCompatActivity() {
 
         val existingExpiryDate =
             intent.getStringExtra("expiryDate")
+        val existingCategory =
+            intent.getStringExtra("category")
+        if (!existingCategory.isNullOrBlank() &&
+            categories.contains(existingCategory)
+        ) {
+            actvCategory.setText(existingCategory, false)
+        }
 
         if (!existingProductName.isNullOrBlank()) {
             etProductName.setText(existingProductName)
@@ -462,6 +499,12 @@ class AddProductActivity : AppCompatActivity() {
 
         val expiryDate =
             etExpiryDate.text.toString().trim()
+        val category =
+            actvCategory.text.toString().trim()
+        if (category !in categories) {
+            actvCategory.error = "Please select a valid category"
+            return
+        }
 
         if (productName.isEmpty()) {
             etProductName.error = "Enter product name"
@@ -486,7 +529,8 @@ class AddProductActivity : AppCompatActivity() {
                 val product = Product(
                     productName = productName,
                     expiryDate = expiryDate,
-                    rawOcrText = ""
+                    rawOcrText = "",
+                    category = category
                 )
 
                 productDao.insertProduct(product)
@@ -507,7 +551,8 @@ class AddProductActivity : AppCompatActivity() {
                     id = existingId,
                     productName = productName,
                     expiryDate = expiryDate,
-                    rawOcrText = ""
+                    rawOcrText = "",
+                    category = category
                 )
 
                 productDao.updateProduct(updatedProduct)

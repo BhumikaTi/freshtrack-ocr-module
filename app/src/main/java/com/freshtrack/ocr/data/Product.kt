@@ -7,8 +7,8 @@ import androidx.room.PrimaryKey
 data class Product(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-
     val productName: String,
     val expiryDate: String,
-    val rawOcrText: String
+    val rawOcrText: String,
+    val category: String = "Other"
 )

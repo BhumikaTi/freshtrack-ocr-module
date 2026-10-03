@@ -5,6 +5,8 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -15,16 +17,44 @@ import com.freshtrack.ocr.data.ProductDao
 import com.freshtrack.ocr.data.ProductDatabase
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 
 class ProductListActivity : AppCompatActivity() {
 
     private lateinit var productListContainer: LinearLayout
     private lateinit var productDao: ProductDao
+    private lateinit var etSearchProducts: TextInputEditText
+    private lateinit var actvFilterCategory: AutoCompleteTextView
+
     private var loadJob: Job? = null
+
+    private var allProducts: List<Product> = emptyList()
+    private var searchQuery = ""
+    private var selectedCategory = "All"
+
+    private val filterCategories = listOf(
+        "All",
+        "Fruits & Vegetables",
+        "Dairy & Eggs",
+        "Meat & Seafood",
+        "Bakery",
+        "Beverages",
+        "Snacks",
+        "Pantry & Groceries",
+        "Personal Care",
+        "Medicines & Health",
+        "Cleaning Supplies",
+        "Baby Care",
+        "Pet Supplies",
+        "Cosmetics",
+        "Other"
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,8 +64,19 @@ class ProductListActivity : AppCompatActivity() {
         productListContainer =
             findViewById(R.id.productListContainer)
 
-        val database = ProductDatabase.getDatabase(this)
+        etSearchProducts =
+            findViewById(R.id.etSearchProducts)
+
+        actvFilterCategory =
+            findViewById(R.id.activeFilterCategory)
+
+        val database =
+            ProductDatabase.getDatabase(this)
+
         productDao = database.productDao()
+
+        setupCategoryFilter()
+        setupSearch()
 
         findViewById<MaterialButton>(
             R.id.btnBack
@@ -55,6 +96,55 @@ class ProductListActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupCategoryFilter() {
+
+        val adapter = ArrayAdapter(
+            this,
+            R.layout.item_category_dropdown,
+            filterCategories
+        )
+
+        actvFilterCategory.setAdapter(adapter)
+        actvFilterCategory.setText("All", false)
+
+        actvFilterCategory.setOnItemClickListener {
+                _, _, position, _ ->
+
+            selectedCategory = filterCategories[position]
+
+            applySearchAndFilter()
+        }
+    }
+
+    private fun setupSearch() {
+
+        etSearchProducts.addTextChangedListener(
+            object : android.text.TextWatcher {
+
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {}
+
+                override fun onTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int
+                ) {
+                    searchQuery = s.toString().trim()
+                    applySearchAndFilter()
+                }
+
+                override fun afterTextChanged(
+                    s: android.text.Editable?
+                ) {}
+            }
+        )
+    }
+
     override fun onResume() {
         super.onResume()
 
@@ -62,39 +152,63 @@ class ProductListActivity : AppCompatActivity() {
             loadProducts()
         }
     }
+
     private fun loadProducts() {
 
         loadJob?.cancel()
 
         loadJob = lifecycleScope.launch {
 
-            productListContainer.removeAllViews()
+            allProducts = productDao.getAllProducts()
 
-            val products =
-                productDao.getAllProducts()
-
-            if (products.isEmpty()) {
-                showEmptyMessage()
-                return@launch
-            }
-
-            val sortedProducts = products.sortedBy {
-                getExpirySortKey(
-                    getExpiryStatus(it.expiryDate)
-                )
-            }
-
-            for (product in sortedProducts) {
-                createProductCard(
-                    product = product
-                )
-            }
+            applySearchAndFilter()
         }
     }
 
-    private fun getExpirySortKey(
-        status: String
-    ): Long {
+    private fun applySearchAndFilter() {
+
+        productListContainer.removeAllViews()
+
+        if (allProducts.isEmpty()) {
+            showEmptyMessage()
+            return
+        }
+
+        val filteredProducts = allProducts.filter { product ->
+
+            val matchesSearch =
+                product.productName.contains(
+                    searchQuery,
+                    ignoreCase = true
+                )
+
+            val matchesCategory =
+                selectedCategory == "All" ||
+                        product.category.equals(
+                            selectedCategory,
+                            ignoreCase = true
+                        )
+
+            matchesSearch && matchesCategory
+        }
+
+        if (filteredProducts.isEmpty()) {
+            showNoResultsMessage()
+            return
+        }
+
+        val sortedProducts = filteredProducts.sortedBy {
+            getExpirySortKey(
+                getExpiryStatus(it.expiryDate)
+            )
+        }
+
+        for (product in sortedProducts) {
+            createProductCard(product)
+        }
+    }
+
+    private fun getExpirySortKey(status: String): Long {
 
         return when {
 
@@ -124,17 +238,13 @@ class ProductListActivity : AppCompatActivity() {
 
     private fun showEmptyMessage() {
 
-        val emptyText =
-            TextView(this)
+        val emptyText = TextView(this)
 
         emptyText.text =
-            "No products added yet."
+            getString(R.string.products_empty)
 
-        emptyText.textSize =
-            14f
-
-        emptyText.gravity =
-            Gravity.CENTER
+        emptyText.textSize = 14f
+        emptyText.gravity = Gravity.CENTER
 
         emptyText.setTextColor(
             getColor(R.color.text_secondary)
@@ -147,41 +257,48 @@ class ProductListActivity : AppCompatActivity() {
             dp(12)
         )
 
-        productListContainer.addView(
-            emptyText
-        )
+        productListContainer.addView(emptyText)
     }
 
-    private fun createProductCard(
-        product: Product
-    ) {
+    private fun showNoResultsMessage() {
 
-        // -------------------------
-        // CARD
-        // -------------------------
+        val emptyText = TextView(this)
 
-        val card =
-            MaterialCardView(this)
+        emptyText.text =
+            "No matching products found."
+
+        emptyText.textSize = 14f
+        emptyText.gravity = Gravity.CENTER
+
+        emptyText.setTextColor(
+            getColor(R.color.text_secondary)
+        )
+
+        emptyText.setPadding(
+            0,
+            dp(20),
+            0,
+            dp(20)
+        )
+
+        productListContainer.addView(emptyText)
+    }
+
+    private fun createProductCard(product: Product) {
+
+        val card = MaterialCardView(this)
 
         card.setCardBackgroundColor(
             getColor(R.color.card_dark)
         )
 
-        card.radius =
-            dp(12).toFloat()
-
-        card.strokeWidth =
-            dp(1)
+        card.radius = dp(12).toFloat()
+        card.strokeWidth = dp(1)
 
         card.strokeColor =
             getColor(R.color.border_light)
 
-        // -------------------------
-        // CARD CONTENT
-        // -------------------------
-
-        val cardLayout =
-            LinearLayout(this)
+        val cardLayout = LinearLayout(this)
 
         cardLayout.orientation =
             LinearLayout.VERTICAL
@@ -193,65 +310,67 @@ class ProductListActivity : AppCompatActivity() {
             dp(9)
         )
 
-        // -------------------------
-        // PRODUCT NAME
-        // -------------------------
+        // Product name
 
-        val nameText =
-            TextView(this)
+        val nameText = TextView(this)
 
-        nameText.text =
-            product.productName
-
-        nameText.textSize =
-            17f
+        nameText.text = product.productName
+        nameText.textSize = 17f
 
         nameText.setTextColor(
             getColor(R.color.text_primary)
         )
 
-        // -------------------------
-        // EXPIRY DATE
-        // -------------------------
+        // Category
 
-        val expiryText =
-            TextView(this)
+        val categoryText = TextView(this)
 
-        expiryText.text =
-            "Expires: ${product.expiryDate}"
+        categoryText.text = product.category
+        categoryText.textSize = 12f
 
-        expiryText.textSize =
-            13f
+        categoryText.setTextColor(
+            getColor(R.color.text_secondary)
+        )
+
+        val categoryParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+
+        categoryParams.topMargin = dp(2)
+
+        // Expiry date
+
+        val expiryText = TextView(this)
+
+        expiryText.text = getString(
+            R.string.expires_label,
+            product.expiryDate
+        )
+
+        expiryText.textSize = 13f
 
         expiryText.setTextColor(
             getColor(R.color.text_secondary)
         )
 
-        val expiryParams =
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
+        val expiryParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
 
-        expiryParams.topMargin =
-            dp(2)
+        expiryParams.topMargin = dp(2)
 
-        // -------------------------
-        // STATUS
-        // -------------------------
+        // Expiry status
 
+        val status = getExpiryStatus(
+            product.expiryDate
+        )
 
-        val status =
-            getExpiryStatus(product.expiryDate)
+        val statusText = TextView(this)
 
-        val statusText =
-            TextView(this)
-
-        statusText.text =
-            status
-
-        statusText.textSize =
-            12f
+        statusText.text = status
+        statusText.textSize = 12f
 
         when {
 
@@ -285,21 +404,16 @@ class ProductListActivity : AppCompatActivity() {
             }
         }
 
-        val statusParams =
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
+        val statusParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
 
-        statusParams.topMargin =
-            dp(1)
+        statusParams.topMargin = dp(1)
 
-        // -------------------------
-        // BUTTON LAYOUT
-        // -------------------------
+        // Button layout
 
-        val buttonLayout =
-            LinearLayout(this)
+        val buttonLayout = LinearLayout(this)
 
         buttonLayout.orientation =
             LinearLayout.HORIZONTAL
@@ -307,131 +421,76 @@ class ProductListActivity : AppCompatActivity() {
         buttonLayout.gravity =
             Gravity.CENTER_VERTICAL
 
-        // -------------------------
-        // EDIT BUTTON
-        // -------------------------
+        // Edit button
 
-        val editButton =
-            MaterialButton(this)
+        val editButton = MaterialButton(this)
 
         editButton.text =
-            "Edit"
+            getString(R.string.button_edit)
 
-        editButton.textSize =
-            11f
-
-        editButton.gravity =
-            Gravity.CENTER
+        editButton.textSize = 11f
+        editButton.gravity = Gravity.CENTER
 
         editButton.setTextColor(
             getColor(R.color.green_primary)
         )
 
-        // White background
         editButton.backgroundTintList =
-            ColorStateList.valueOf(
-                Color.WHITE
-            )
+            ColorStateList.valueOf(Color.WHITE)
 
-        // Light outline
         editButton.strokeColor =
             ColorStateList.valueOf(
                 getColor(R.color.border_light)
             )
 
-        editButton.minHeight =
-            0
+        editButton.minHeight = 0
+        editButton.minWidth = 0
+        editButton.insetTop = 0
+        editButton.insetBottom = 0
 
-        editButton.minWidth =
-            0
+        editButton.setPadding(0, 0, 0, 0)
+        editButton.strokeWidth = dp(1)
+        editButton.cornerRadius = dp(9)
 
-        editButton.insetTop =
-            0
+        // Delete button
 
-        editButton.insetBottom =
-            0
-
-        editButton.setPadding(
-            0,
-            0,
-            0,
-            0
-        )
-
-        editButton.strokeWidth =
-            dp(1)
-
-        editButton.cornerRadius =
-            dp(9)
-
-        // -------------------------
-        // DELETE BUTTON
-        // -------------------------
-
-        val deleteButton =
-            MaterialButton(this)
+        val deleteButton = MaterialButton(this)
 
         deleteButton.text =
-            "Delete"
+            getString(R.string.button_delete)
 
-        deleteButton.textSize =
-            11f
-
-        deleteButton.gravity =
-            Gravity.CENTER
+        deleteButton.textSize = 11f
+        deleteButton.gravity = Gravity.CENTER
 
         deleteButton.setTextColor(
             getColor(R.color.green_primary)
         )
 
-        // White background
         deleteButton.backgroundTintList =
-            ColorStateList.valueOf(
-                Color.WHITE
-            )
+            ColorStateList.valueOf(Color.WHITE)
 
-        // Light outline
         deleteButton.strokeColor =
             ColorStateList.valueOf(
                 getColor(R.color.border_light)
             )
 
-        deleteButton.minHeight =
-            0
+        deleteButton.minHeight = 0
+        deleteButton.minWidth = 0
+        deleteButton.insetTop = 0
+        deleteButton.insetBottom = 0
 
-        deleteButton.minWidth =
-            0
+        deleteButton.setPadding(0, 0, 0, 0)
+        deleteButton.strokeWidth = dp(1)
+        deleteButton.cornerRadius = dp(9)
 
-        deleteButton.insetTop =
-            0
-
-        deleteButton.insetBottom =
-            0
-
-        deleteButton.setPadding(
-            0,
-            0,
-            0,
-            0
-        )
-
-        deleteButton.strokeWidth =
-            dp(1)
-
-        deleteButton.cornerRadius =
-            dp(9)
-
-        // -------------------------
-        // EDIT CLICK
-        // -------------------------
+        // Edit click
 
         editButton.setOnClickListener {
 
-            val intent =
-                Intent(
-                    this,
-                    AddProductActivity::class.java
-                )
+            val intent = Intent(
+                this,
+                AddProductActivity::class.java
+            )
 
             intent.putExtra(
                 "productId",
@@ -448,12 +507,15 @@ class ProductListActivity : AppCompatActivity() {
                 product.expiryDate
             )
 
+            intent.putExtra(
+                "category",
+                product.category
+            )
+
             startActivity(intent)
         }
 
-        // -------------------------
-        // DELETE CLICK
-        // -------------------------
+        // Delete click
 
         deleteButton.setOnClickListener {
 
@@ -465,16 +527,13 @@ class ProductListActivity : AppCompatActivity() {
             }
         }
 
-        // -------------------------
-        // BUTTON SIZES
-        // -------------------------
+        // Button sizes
 
-        val editParams =
-            LinearLayout.LayoutParams(
-                0,
-                dp(34),
-                1f
-            )
+        val editParams = LinearLayout.LayoutParams(
+            0,
+            dp(34),
+            1f
+        )
 
         editParams.setMargins(
             0,
@@ -483,12 +542,11 @@ class ProductListActivity : AppCompatActivity() {
             0
         )
 
-        val deleteParams =
-            LinearLayout.LayoutParams(
-                0,
-                dp(34),
-                1f
-            )
+        val deleteParams = LinearLayout.LayoutParams(
+            0,
+            dp(34),
+            1f
+        )
 
         deleteParams.setMargins(
             dp(4),
@@ -507,12 +565,13 @@ class ProductListActivity : AppCompatActivity() {
             deleteParams
         )
 
-        // -------------------------
-        // ADD CONTENT TO CARD
-        // -------------------------
+        // Add content to card
+
+        cardLayout.addView(nameText)
 
         cardLayout.addView(
-            nameText
+            categoryText,
+            categoryParams
         )
 
         cardLayout.addView(
@@ -525,23 +584,16 @@ class ProductListActivity : AppCompatActivity() {
             statusParams
         )
 
-        cardLayout.addView(
-            buttonLayout
+        cardLayout.addView(buttonLayout)
+
+        card.addView(cardLayout)
+
+        // Card spacing
+
+        val cardParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
         )
-
-        card.addView(
-            cardLayout
-        )
-
-        // -------------------------
-        // CARD SPACING
-        // -------------------------
-
-        val cardParams =
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
 
         cardParams.setMargins(
             0,
@@ -556,9 +608,7 @@ class ProductListActivity : AppCompatActivity() {
         )
     }
 
-    // -------------------------
-    // EXPIRY STATUS
-    // -------------------------
+    // Expiry status
 
     private fun getExpiryStatus(
         expiryDate: String
@@ -566,713 +616,112 @@ class ProductListActivity : AppCompatActivity() {
 
         return try {
 
-            val date =
-                expiryDate.trim()
+            val date = expiryDate.trim()
 
-            val expiryCalendar =
-                Calendar.getInstance()
+            val formats = listOf(
+                "dd/MM/yyyy",
+                "d/M/yyyy",
+                "dd MMMM yyyy",
+                "d MMMM yyyy",
+                "dd MMM yyyy",
+                "d MMM yyyy",
+                "MM/yyyy",
+                "M/yyyy",
+                "MMM yyyy",
+                "MMMM yyyy",
+                "MMM/yyyy",
+                "MMMM/yyyy",
+                "MMM yy",
+                "MMMM yy",
+                "MM/yy",
+                "M/yy"
+            )
 
-            var parsed = false
+            var expiryCalendar: Calendar? = null
 
-            // --------------------------------
-            // FORMAT 1: dd/MM/yyyy
-            // Example: 16/05/2026
-            // --------------------------------
+            for (format in formats) {
 
-            if (
-                date.matches(
-                    Regex(
-                        "^\\d{1,2}/\\d{1,2}/\\d{4}$"
-                    )
-                )
-            ) {
-
-                val parts =
-                    date.split("/")
-
-                val day =
-                    parts[0].toInt()
-
-                val month =
-                    parts[1].toInt()
-
-                val year =
-                    parts[2].toInt()
-
-                if (
-                    month in 1..12 &&
-                    day in 1..31
-                ) {
-
-                    expiryCalendar.clear()
-
-                    expiryCalendar.set(
-                        year,
-                        month - 1,
-                        day
+                val formatter =
+                    SimpleDateFormat(
+                        format,
+                        Locale.ENGLISH
                     )
 
-                    parsed = true
-                }
-            }
+                formatter.isLenient = false
 
-            // --------------------------------
-            // FORMAT 2: dd Month yyyy
-            // Example: 25 September 2026
-            // --------------------------------
-
-            if (!parsed) {
-
-                val match =
-                    Regex(
-                        "(?i)^(\\d{1,2})\\s+" +
-                                "(January|February|March|April|May|June|July|August|September|October|November|December)" +
-                                "\\s+(\\d{4})$"
-                    ).find(date)
-
-                if (match != null) {
-
-                    val day =
-                        match.groupValues[1].toInt()
-
-                    val monthName =
-                        match.groupValues[2]
-                            .lowercase(Locale.ENGLISH)
-
-                    val year =
-                        match.groupValues[3].toInt()
-
-                    val month =
-                        when (monthName) {
-
-                            "january" ->
-                                Calendar.JANUARY
-
-                            "february" ->
-                                Calendar.FEBRUARY
-
-                            "march" ->
-                                Calendar.MARCH
-
-                            "april" ->
-                                Calendar.APRIL
-
-                            "may" ->
-                                Calendar.MAY
-
-                            "june" ->
-                                Calendar.JUNE
-
-                            "july" ->
-                                Calendar.JULY
-
-                            "august" ->
-                                Calendar.AUGUST
-
-                            "september" ->
-                                Calendar.SEPTEMBER
-
-                            "october" ->
-                                Calendar.OCTOBER
-
-                            "november" ->
-                                Calendar.NOVEMBER
-
-                            "december" ->
-                                Calendar.DECEMBER
-
-                            else -> -1
-                        }
-
-                    if (month >= 0) {
-
-                        expiryCalendar.clear()
-
-                        expiryCalendar.set(
-                            year,
-                            month,
-                            day
-                        )
-
-                        parsed = true
+                val parsedDate: Date? =
+                    try {
+                        formatter.parse(date)
+                    } catch (e: Exception) {
+                        null
                     }
-                }
-            }
 
-            // --------------------------------
-            // FORMAT 3: dd MMM yyyy
-            // Examples:
-            // 16 Oct 2026
-            // 25 Sep 2026
-            // 25 Sept 2026
-            // --------------------------------
+                if (parsedDate != null) {
 
-            if (!parsed) {
+                    val calendar =
+                        Calendar.getInstance()
 
-                val match =
-                    Regex(
-                        "(?i)^(\\d{1,2})\\s+" +
-                                "(Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|Sept|September|Oct|October|Nov|November|Dec|December)" +
-                                "\\s+(\\d{4})$"
-                    ).find(date)
+                    calendar.time = parsedDate
 
-                if (match != null) {
+                    // Month-only formats use the last day
+                    // of the month as the expiry date.
 
-                    val day =
-                        match.groupValues[1].toInt()
+                    if (
+                        format == "MM/yyyy" ||
+                        format == "M/yyyy" ||
+                        format == "MMM yyyy" ||
+                        format == "MMMM yyyy" ||
+                        format == "MMM/yyyy" ||
+                        format == "MMMM/yyyy" ||
+                        format == "MMM yy" ||
+                        format == "MMMM yy" ||
+                        format == "MM/yy" ||
+                        format == "M/yy"
+                    ) {
 
-                    val monthName =
-                        match.groupValues[2]
-                            .lowercase(Locale.ENGLISH)
-
-                    val year =
-                        match.groupValues[3].toInt()
-
-                    val month =
-                        when (monthName) {
-
-                            "jan",
-                            "january" ->
-                                Calendar.JANUARY
-
-                            "feb",
-                            "february" ->
-                                Calendar.FEBRUARY
-
-                            "mar",
-                            "march" ->
-                                Calendar.MARCH
-
-                            "apr",
-                            "april" ->
-                                Calendar.APRIL
-
-                            "may" ->
-                                Calendar.MAY
-
-                            "jun",
-                            "june" ->
-                                Calendar.JUNE
-
-                            "jul",
-                            "july" ->
-                                Calendar.JULY
-
-                            "aug",
-                            "august" ->
-                                Calendar.AUGUST
-
-                            "sep",
-                            "sept",
-                            "september" ->
-                                Calendar.SEPTEMBER
-
-                            "oct",
-                            "october" ->
-                                Calendar.OCTOBER
-
-                            "nov",
-                            "november" ->
-                                Calendar.NOVEMBER
-
-                            "dec",
-                            "december" ->
-                                Calendar.DECEMBER
-
-                            else -> -1
-                        }
-
-                    if (month >= 0) {
-
-                        expiryCalendar.clear()
-
-                        expiryCalendar.set(
-                            year,
-                            month,
-                            day
-                        )
-
-                        parsed = true
-                    }
-                }
-            }
-
-            // --------------------------------
-            // FORMAT 4: MM/yyyy
-            // Example: 12/2026
-            //
-            // Uses LAST DAY of month
-            // --------------------------------
-
-            if (!parsed) {
-
-                if (
-                    date.matches(
-                        Regex(
-                            "^\\d{1,2}/\\d{4}$"
-                        )
-                    )
-                ) {
-
-                    val parts =
-                        date.split("/")
-
-                    val month =
-                        parts[0].toInt()
-
-                    val year =
-                        parts[1].toInt()
-
-                    if (month in 1..12) {
-
-                        expiryCalendar.clear()
-
-                        expiryCalendar.set(
-                            year,
-                            month - 1,
-                            1
-                        )
-
-                        expiryCalendar.set(
+                        calendar.set(
                             Calendar.DAY_OF_MONTH,
-                            expiryCalendar.getActualMaximum(
+                            calendar.getActualMaximum(
                                 Calendar.DAY_OF_MONTH
                             )
                         )
-
-                        parsed = true
                     }
+
+                    expiryCalendar = calendar
+                    break
                 }
             }
 
-            // --------------------------------
-            // FORMAT 5: MMM yyyy
-            // Example: APR 2026
-            //
-            // Uses LAST DAY of month
-            // --------------------------------
-
-            if (!parsed) {
-
-                val match =
-                    Regex(
-                        "(?i)^(Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|Sept|September|Oct|October|Nov|November|Dec|December)" +
-                                "\\s+(\\d{4})$"
-                    ).find(date)
-
-                if (match != null) {
-
-                    val monthName =
-                        match.groupValues[1]
-                            .lowercase(Locale.ENGLISH)
-
-                    val year =
-                        match.groupValues[2].toInt()
-
-                    val month =
-                        when (monthName) {
-
-                            "jan",
-                            "january" ->
-                                Calendar.JANUARY
-
-                            "feb",
-                            "february" ->
-                                Calendar.FEBRUARY
-
-                            "mar",
-                            "march" ->
-                                Calendar.MARCH
-
-                            "apr",
-                            "april" ->
-                                Calendar.APRIL
-
-                            "may" ->
-                                Calendar.MAY
-
-                            "jun",
-                            "june" ->
-                                Calendar.JUNE
-
-                            "jul",
-                            "july" ->
-                                Calendar.JULY
-
-                            "aug",
-                            "august" ->
-                                Calendar.AUGUST
-
-                            "sep",
-                            "sept",
-                            "september" ->
-                                Calendar.SEPTEMBER
-
-                            "oct",
-                            "october" ->
-                                Calendar.OCTOBER
-
-                            "nov",
-                            "november" ->
-                                Calendar.NOVEMBER
-
-                            "dec",
-                            "december" ->
-                                Calendar.DECEMBER
-
-                            else -> -1
-                        }
-
-                    if (month >= 0) {
-
-                        expiryCalendar.clear()
-
-                        expiryCalendar.set(
-                            year,
-                            month,
-                            1
-                        )
-
-                        expiryCalendar.set(
-                            Calendar.DAY_OF_MONTH,
-                            expiryCalendar.getActualMaximum(
-                                Calendar.DAY_OF_MONTH
-                            )
-                        )
-
-                        parsed = true
-                    }
-                }
-            }
-
-            // --------------------------------
-            // FORMAT 6: MMM/yyyy
-            // Example: SEP/2026
-            //
-            // Uses LAST DAY of month
-            // --------------------------------
-
-            if (!parsed) {
-
-                val match =
-                    Regex(
-                        "(?i)^(Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|Sept|September|Oct|October|Nov|November|Dec|December)" +
-                                "/(\\d{4})$"
-                    ).find(date)
-
-                if (match != null) {
-
-                    val monthName =
-                        match.groupValues[1]
-                            .lowercase(Locale.ENGLISH)
-
-                    val year =
-                        match.groupValues[2].toInt()
-
-                    val month =
-                        when (monthName) {
-
-                            "jan",
-                            "january" ->
-                                Calendar.JANUARY
-
-                            "feb",
-                            "february" ->
-                                Calendar.FEBRUARY
-
-                            "mar",
-                            "march" ->
-                                Calendar.MARCH
-
-                            "apr",
-                            "april" ->
-                                Calendar.APRIL
-
-                            "may" ->
-                                Calendar.MAY
-
-                            "jun",
-                            "june" ->
-                                Calendar.JUNE
-
-                            "jul",
-                            "july" ->
-                                Calendar.JULY
-
-                            "aug",
-                            "august" ->
-                                Calendar.AUGUST
-
-                            "sep",
-                            "sept",
-                            "september" ->
-                                Calendar.SEPTEMBER
-
-                            "oct",
-                            "october" ->
-                                Calendar.OCTOBER
-
-                            "nov",
-                            "november" ->
-                                Calendar.NOVEMBER
-
-                            "dec",
-                            "december" ->
-                                Calendar.DECEMBER
-
-                            else -> -1
-                        }
-
-                    if (month >= 0) {
-
-                        expiryCalendar.clear()
-
-                        expiryCalendar.set(
-                            year,
-                            month,
-                            1
-                        )
-
-                        expiryCalendar.set(
-                            Calendar.DAY_OF_MONTH,
-                            expiryCalendar.getActualMaximum(
-                                Calendar.DAY_OF_MONTH
-                            )
-                        )
-
-                        parsed = true
-                    }
-                }
-            }
-
-            // --------------------------------
-            // FORMAT 7: MMM yy
-            // Example: SEP 26
-            //
-            // Uses LAST DAY of month
-            // --------------------------------
-
-            if (!parsed) {
-
-                val match =
-                    Regex(
-                        "(?i)^(Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|Sept|September|Oct|October|Nov|November|Dec|December)" +
-                                "\\s+(\\d{2})$"
-                    ).find(date)
-
-                if (match != null) {
-
-                    val monthName =
-                        match.groupValues[1]
-                            .lowercase(Locale.ENGLISH)
-
-                    val shortYear =
-                        match.groupValues[2].toInt()
-
-                    val year =
-                        2000 + shortYear
-
-                    val month =
-                        when (monthName) {
-
-                            "jan",
-                            "january" ->
-                                Calendar.JANUARY
-
-                            "feb",
-                            "february" ->
-                                Calendar.FEBRUARY
-
-                            "mar",
-                            "march" ->
-                                Calendar.MARCH
-
-                            "apr",
-                            "april" ->
-                                Calendar.APRIL
-
-                            "may" ->
-                                Calendar.MAY
-
-                            "jun",
-                            "june" ->
-                                Calendar.JUNE
-
-                            "jul",
-                            "july" ->
-                                Calendar.JULY
-
-                            "aug",
-                            "august" ->
-                                Calendar.AUGUST
-
-                            "sep",
-                            "sept",
-                            "september" ->
-                                Calendar.SEPTEMBER
-
-                            "oct",
-                            "october" ->
-                                Calendar.OCTOBER
-
-                            "nov",
-                            "november" ->
-                                Calendar.NOVEMBER
-
-                            "dec",
-                            "december" ->
-                                Calendar.DECEMBER
-
-                            else -> -1
-                        }
-
-                    if (month >= 0) {
-
-                        expiryCalendar.clear()
-
-                        expiryCalendar.set(
-                            year,
-                            month,
-                            1
-                        )
-
-                        expiryCalendar.set(
-                            Calendar.DAY_OF_MONTH,
-                            expiryCalendar.getActualMaximum(
-                                Calendar.DAY_OF_MONTH
-                            )
-                        )
-
-                        parsed = true
-                    }
-                }
-            }
-
-            // --------------------------------
-            // FORMAT 8: MM/yy
-            // Example: 04/27
-            //
-            // Uses LAST DAY of month
-            // --------------------------------
-
-            if (!parsed) {
-
-                if (
-                    date.matches(
-                        Regex(
-                            "^\\d{1,2}/\\d{2}$"
-                        )
-                    )
-                ) {
-
-                    val parts =
-                        date.split("/")
-
-                    val month =
-                        parts[0].toInt()
-
-                    val shortYear =
-                        parts[1].toInt()
-
-                    val year =
-                        2000 + shortYear
-
-                    if (month in 1..12) {
-
-                        expiryCalendar.clear()
-
-                        expiryCalendar.set(
-                            year,
-                            month - 1,
-                            1
-                        )
-
-                        expiryCalendar.set(
-                            Calendar.DAY_OF_MONTH,
-                            expiryCalendar.getActualMaximum(
-                                Calendar.DAY_OF_MONTH
-                            )
-                        )
-
-                        parsed = true
-                    }
-                }
-            }
-
-            // --------------------------------
-            // IF DATE COULD NOT BE PARSED
-            // --------------------------------
-
-            if (!parsed) {
+            if (expiryCalendar == null) {
                 return "Status unavailable"
             }
 
-            // --------------------------------
-            // TODAY
-            // --------------------------------
-
-            val today =
-                Calendar.getInstance()
+            val today = Calendar.getInstance()
 
             today.set(
                 Calendar.HOUR_OF_DAY,
                 0
             )
 
-            today.set(
-                Calendar.MINUTE,
-                0
-            )
-
-            today.set(
-                Calendar.SECOND,
-                0
-            )
-
-            today.set(
-                Calendar.MILLISECOND,
-                0
-            )
-
-            // --------------------------------
-            // EXPIRY DATE
-            // --------------------------------
+            today.set(Calendar.MINUTE, 0)
+            today.set(Calendar.SECOND, 0)
+            today.set(Calendar.MILLISECOND, 0)
 
             expiryCalendar.set(
                 Calendar.HOUR_OF_DAY,
                 0
             )
 
-            expiryCalendar.set(
-                Calendar.MINUTE,
-                0
-            )
-
-            expiryCalendar.set(
-                Calendar.SECOND,
-                0
-            )
-
-            expiryCalendar.set(
-                Calendar.MILLISECOND,
-                0
-            )
-
-            // --------------------------------
-            // CALCULATE DAYS LEFT
-            // --------------------------------
+            expiryCalendar.set(Calendar.MINUTE, 0)
+            expiryCalendar.set(Calendar.SECOND, 0)
+            expiryCalendar.set(Calendar.MILLISECOND, 0)
 
             val difference =
                 expiryCalendar.timeInMillis -
                         today.timeInMillis
 
             val daysLeft =
-                difference /
-                        (1000 * 60 * 60 * 24)
-
-            // --------------------------------
-            // STATUS
-            // --------------------------------
+                difference / (1000 * 60 * 60 * 24)
 
             when {
 
@@ -1299,13 +748,9 @@ class ProductListActivity : AppCompatActivity() {
         }
     }
 
-    // -------------------------
-    // DP HELPER
-    // -------------------------
+    // DP helper
 
-    private fun dp(
-        value: Int
-    ): Int {
+    private fun dp(value: Int): Int {
 
         return (
                 value *

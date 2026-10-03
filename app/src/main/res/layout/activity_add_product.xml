@@ -48,6 +48,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvAddProductTitle" />
 
+    <!-- Product Name -->
+
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/productNameInputLayout"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -73,6 +75,40 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Category -->
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/categoryInputLayout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:hint="Category"
+        app:boxBackgroundColor="@color/card_dark"
+        app:boxStrokeColor="@color/green_primary"
+        app:hintTextColor="@color/text_secondary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/productNameInputLayout">
+
+        <AutoCompleteTextView
+            android:id="@+id/actvCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="none"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary"
+            android:textSize="16sp"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp"
+            android:popupBackground="@color/card_dark"
+            android:dropDownVerticalOffset="4dp"
+            android:popupElevation="8dp"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Expiry Date -->
+
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/expiryDateInputLayout"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -85,7 +121,7 @@
         app:hintTextColor="@color/text_secondary"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/productNameInputLayout">
+        app:layout_constraintTop_toBottomOf="@id/categoryInputLayout">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etExpiryDate"
@@ -131,6 +167,8 @@
         app:layout_constraintTop_toBottomOf="@id/tvDateHint" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+
 
 
 

@@ -11,14 +11,12 @@
     android:paddingTop="16dp"
     android:paddingBottom="0dp">
 
-    <!-- Back Button -->
-
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnBack"
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="← Back"
+        android:text="@string/back"
         android:textAllCaps="false"
         android:textColor="@color/text_secondary"
         android:textSize="13sp"
@@ -29,35 +27,29 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Screen Title -->
-
     <TextView
         android:id="@+id/tvProductListTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="My Products"
+        android:text="@string/my_products_title"
         android:textColor="@color/text_primary"
         android:textSize="26sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btnBack" />
 
-    <!-- Subtitle -->
-
     <TextView
         android:id="@+id/tvProductListSubtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="3dp"
-        android:text="Your saved products will appear here."
+        android:text="@string/my_products_subtitle"
         android:textColor="@color/text_secondary"
         android:textSize="13sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvProductListTitle" />
-
-    <!-- Scrollable Product Area -->
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/productScrollView"
@@ -78,12 +70,72 @@
             android:orientation="vertical"
             android:paddingBottom="20dp">
 
+            <!-- Search products -->
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/searchProductLayout"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Search products"
+                app:boxBackgroundColor="@color/card_dark"
+                app:boxStrokeColor="@color/green_primary"
+                app:hintTextColor="@color/text_secondary"
+                app:startIconDrawable="@android:drawable/ic_menu_search"
+                app:startIconTint="@color/text_secondary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etSearchProducts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:singleLine="true"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_secondary"
+                    android:textSize="15sp" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Category filter -->
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/categoryFilterLayout"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="Filter by category"
+                app:boxBackgroundColor="@color/card_dark"
+                app:boxStrokeColor="@color/green_primary"
+                app:hintTextColor="@color/text_secondary"
+                app:endIconMode="dropdown_menu"
+                app:endIconTint="@color/green_primary">
+
+                <AutoCompleteTextView
+                    android:id="@+id/activeFilterCategory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:inputType="none"
+                    android:focusable="false"
+                    android:text="All"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:popupBackground="@color/card_dark"
+                    android:dropDownVerticalOffset="4dp"
+                    android:popupElevation="8dp"/>
+
+            </com.google.android.material.textfield.TextInputLayout>
+
             <!-- Dynamic Product List -->
 
             <LinearLayout
                 android:id="@+id/productListContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
                 android:orientation="vertical" />
 
             <!-- Add Product Button -->
@@ -94,7 +146,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="46dp"
                 android:layout_marginTop="12dp"
-                android:text="+ Add Product"
+                android:text="@string/button_add_product"
                 android:textColor="@color/green_primary"
                 android:textSize="13sp"
                 android:textStyle="bold"
