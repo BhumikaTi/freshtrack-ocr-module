@@ -1,9 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Add this line below so Android knows what to call your app! -->
+
     <string name="app_name">FreshTrack OCR</string>
 
     <string name="camera_permission_denied">Camera permission denied — cannot open live scan.</string>
     <string name="no_image_selected">No image selected.</string>
     <string name="gallery_ocr_success">Extracted: %1$s</string>
+
+    <string name="language_title">Your preferred language</string>
+    <string name="language_subtitle">Choose the language you would like to use in the app.</string>
+    <string name="language_hindi">हिन्दी</string>
+    <string name="language_english">English</string>
+    <string name="language_continue">Continue</string>
+
+    <!-- Home Screen -->
+    <string name="home_subtitle">know what\'s fresh</string>
+    <string name="home_scan_title">Scan a product</string>
+    <string name="home_scan_subtitle">to check its expiry date</string>
+    <string name="home_scan_now">Scan now</string>
+    <string name="home_products_title">Your products</string>
+    <string name="home_see_all">See all</string>
+    <string name="home_settings">Settings</string>
+
+    <!-- Demo Product Expiry -->
+    <string name="home_expiry_days">Expires in %1$d days</string>
+
+    <string name="home_product_one_expiry">Expires in 12 days</string>
+    <string name="home_product_two_expiry">Expires in 28 days</string>
+
+    <string name="back">←  Back</string>
+    <string name="add_product_title">Add Product</string>
+    <string name="add_product_subtitle">How would you like to add it?</string>
+    <string name="live_ocr">📷   Live OCR\n      Scan with camera</string>
+    <string name="gallery_upload">🖼   Gallery / Upload\n      Choose an image</string>
+    <string name="add_manually">⌨   Add Manually\n      Enter product details</string>
+
+    <string name="my_products_title">My Products</string>
+    <string name="my_products_subtitle">Your saved products will appear here.</string>
+    <string name="add_product_button">+ Add Product</string>
+    <string name="empty_products">No products added yet.</string>
+
+    <string name="products_empty">No products added yet.</string>
+    <string name="expires_label">Expires: %1$s</string>
+    <string name="status_expired">Expired</string>
+    <string name="status_expires_today">Expires today</string>
+    <string name="status_expires_soon">Expires soon — %1$d days left</string>
+    <string name="status_fresh">Fresh — %1$d days left</string>
+    <string name="status_unavailable">Status unavailable</string>
+    <string name="button_edit">Edit</string>
+    <string name="button_delete">Delete</string>
+    <string name="button_add_product">+ Add Product</string>
+
+
 </resources>

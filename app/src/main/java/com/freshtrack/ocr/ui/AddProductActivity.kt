@@ -31,6 +31,7 @@ class AddProductActivity : AppCompatActivity() {
 
     private lateinit var etProductName: TextInputEditText
     private lateinit var etExpiryDate: TextInputEditText
+    private lateinit var etLocation: TextInputEditText
     private lateinit var actvCategory: AutoCompleteTextView
     private lateinit var productDao: ProductDao
 
@@ -62,6 +63,7 @@ class AddProductActivity : AppCompatActivity() {
 
         etProductName = findViewById(R.id.etProductName)
         etExpiryDate = findViewById(R.id.etExpiryDate)
+        etLocation = findViewById(R.id.etLocation)
         actvCategory = findViewById(R.id.actvCategory)
 
 // Set up category dropdown
@@ -89,6 +91,8 @@ class AddProductActivity : AppCompatActivity() {
 
         val existingExpiryDate =
             intent.getStringExtra("expiryDate")
+        val existingLocation =
+            intent.getStringExtra("location")
         val existingCategory =
             intent.getStringExtra("category")
         if (!existingCategory.isNullOrBlank() &&
@@ -103,6 +107,9 @@ class AddProductActivity : AppCompatActivity() {
 
         if (!existingExpiryDate.isNullOrBlank()) {
             etExpiryDate.setText(existingExpiryDate)
+        }
+        if (!existingLocation.isNullOrBlank()) {
+            etLocation.setText(existingLocation)
         }
 
         findViewById<MaterialButton>(R.id.btnBack).setOnClickListener {
@@ -499,6 +506,8 @@ class AddProductActivity : AppCompatActivity() {
 
         val expiryDate =
             etExpiryDate.text.toString().trim()
+        val location =
+            etLocation.text.toString().trim()
         val category =
             actvCategory.text.toString().trim()
         if (category !in categories) {
@@ -530,6 +539,7 @@ class AddProductActivity : AppCompatActivity() {
                     productName = productName,
                     expiryDate = expiryDate,
                     rawOcrText = "",
+                    location = location,
                     category = category
                 )
 
@@ -552,6 +562,7 @@ class AddProductActivity : AppCompatActivity() {
                     productName = productName,
                     expiryDate = expiryDate,
                     rawOcrText = "",
+                    location = location,
                     category = category
                 )
 
