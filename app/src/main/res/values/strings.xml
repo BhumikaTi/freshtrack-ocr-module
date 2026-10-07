@@ -1,9 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Add this line below so Android knows what to call your app! -->
+
     <string name="app_name">FreshTrack OCR</string>
 
     <string name="camera_permission_denied">Camera permission denied — cannot open live scan.</string>
     <string name="no_image_selected">No image selected.</string>
     <string name="gallery_ocr_success">Extracted: %1$s</string>
+
+    <!-- Product List -->
+    <string name="back">Back</string>
+    <string name="my_products_title">My Products</string>
+    <string name="my_products_subtitle">Manage your saved products</string>
+    <string name="button_add_product">Add Product</string>
+    <string name="products_empty">No products added yet.</string>
+    <string name="expires_label">Expires</string>
+    <string name="button_edit">Edit</string>
+    <string name="button_delete">Delete</string>
+
 </resources>
