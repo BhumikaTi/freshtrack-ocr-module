@@ -4,9 +4,12 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
+
     <uses-feature
         android:name="android.hardware.camera.autofocus"
         android:required="false" />
@@ -21,40 +24,51 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OcrTest"
         tools:targetApi="31">
+
         <activity
             android:name=".ui.AddProductActivity"
             android:exported="false" />
+
         <activity
             android:name=".ui.ProductListActivity"
             android:exported="false" />
+
         <activity
             android:name=".ui.ResultActivity"
             android:exported="false" />
+
         <activity
             android:name=".ui.ManualEntryActivity"
             android:exported="false" />
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.OcrTest">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
+
         <activity
             android:name=".ui.CameraScanActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.OcrTest" />
+
         <activity
             android:name=".ui.CropConfirmActivity"
             android:exported="false"
             android:theme="@style/Theme.OcrTest" />
+
         <activity
             android:name=".ui.AddOptionsActivity"
             android:exported="false" />
+
     </application>
 
 </manifest>
