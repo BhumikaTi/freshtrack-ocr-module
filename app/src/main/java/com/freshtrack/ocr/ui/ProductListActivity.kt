@@ -41,18 +41,17 @@ class ProductListActivity : AppCompatActivity() {
     private val filterCategories = listOf(
         "All",
         "Fruits & Vegetables",
-        "Dairy & Eggs",
+        "Dairy",
         "Meat & Seafood",
         "Bakery",
         "Beverages",
         "Snacks",
-        "Pantry & Groceries",
+        "Pantry",
         "Personal Care",
-        "Medicines & Health",
         "Cleaning Supplies",
-        "Baby Care",
         "Pet Supplies",
         "Cosmetics",
+        "Medicines",
         "Other"
     )
 
@@ -587,6 +586,21 @@ class ProductListActivity : AppCompatActivity() {
         cardLayout.addView(buttonLayout)
 
         card.addView(cardLayout)
+
+        card.setOnClickListener {
+
+            val intent = Intent(
+                this,
+                ProductDetailsActivity::class.java
+            )
+
+            intent.putExtra(
+                "productId",
+                product.id
+            )
+
+            startActivity(intent)
+        }
 
         // Card spacing
 

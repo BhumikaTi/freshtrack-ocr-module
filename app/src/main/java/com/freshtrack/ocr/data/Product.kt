@@ -10,5 +10,6 @@ data class Product(
     val productName: String,
     val expiryDate: String,
     val rawOcrText: String,
-    val category: String = "Other"
+    val category: String = "Other",
+    val location: String = ""
 )

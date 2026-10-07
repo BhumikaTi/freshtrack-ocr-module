@@ -55,6 +55,10 @@
         <activity
             android:name=".ui.AddOptionsActivity"
             android:exported="false" />
+        <activity
+            android:name=".ui.ProductDetailsActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

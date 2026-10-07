@@ -136,6 +136,33 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Location -->
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/locationInputLayout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:hint="Location"
+        app:boxBackgroundColor="@color/card_dark"
+        app:boxStrokeColor="@color/green_primary"
+        app:hintTextColor="@color/text_secondary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/expiryDateInputLayout">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textCapSentences"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary"
+            android:textSize="16sp" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
     <TextView
         android:id="@+id/tvDateHint"
         android:layout_width="0dp"
@@ -146,7 +173,7 @@
         android:textSize="13sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/expiryDateInputLayout" />
+        app:layout_constraintTop_toBottomOf="@id/locationInputLayout" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveProduct"
