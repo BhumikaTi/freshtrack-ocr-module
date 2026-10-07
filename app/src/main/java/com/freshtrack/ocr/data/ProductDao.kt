@@ -15,11 +15,13 @@ interface ProductDao {
     @Query("SELECT * FROM Product")
     suspend fun getAllProducts(): List<Product>
 
+    @Query("SELECT * FROM Product WHERE id = :productId LIMIT 1")
+    suspend fun getProductById(productId: Int): Product?
+
     @Update
     suspend fun updateProduct(product: Product)
 
     @Delete
     suspend fun deleteProduct(product: Product)
-
 
 }
