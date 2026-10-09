@@ -168,6 +168,10 @@ class ProductDetailsActivity : AppCompatActivity() {
 // DELETE PRODUCT
 // -------------------------
 
+                    // -------------------------
+// DELETE PRODUCT
+// -------------------------
+
                     findViewById<View>(
                         R.id.btnDeleteProduct
                     ).setOnClickListener {
@@ -176,7 +180,30 @@ class ProductDetailsActivity : AppCompatActivity() {
                             androidx.appcompat.app.AlertDialog.Builder(
                                 this@ProductDetailsActivity
                             )
-                                .setTitle("Delete Product")
+                                .setCustomTitle(
+                                    TextView(this@ProductDetailsActivity).apply {
+                                        text = "Delete Product"
+                                        setTextColor(android.graphics.Color.BLACK)
+                                        textSize = 20f
+                                        setTypeface(
+                                            null,
+                                            android.graphics.Typeface.BOLD
+                                        )
+
+                                        val horizontalPadding =
+                                            (24 * resources.displayMetrics.density).toInt()
+
+                                        val verticalPadding =
+                                            (20 * resources.displayMetrics.density).toInt()
+
+                                        setPadding(
+                                            horizontalPadding,
+                                            verticalPadding,
+                                            horizontalPadding,
+                                            0
+                                        )
+                                    }
+                                )
                                 .setMessage(
                                     "Are you sure you want to delete ${product.productName}?"
                                 )
@@ -205,74 +232,42 @@ class ProductDetailsActivity : AppCompatActivity() {
 
                         dialog.setOnShowListener {
 
-                            // -------------------------
-                            // DIALOG BACKGROUND
-                            // -------------------------
-
+                            // Dialog background
                             dialog.window?.setBackgroundDrawable(
                                 android.graphics.drawable.ColorDrawable(
                                     android.graphics.Color.parseColor("#FAF9F4")
                                 )
                             )
 
-
-                            // -------------------------
-                            // MAKE DIALOG SMALLER
-                            // -------------------------
-
+                            // Dialog width
                             val widthInDp = 320
 
                             val widthInPixels =
-                                (widthInDp * resources.displayMetrics.density).toInt()
+                                (
+                                        widthInDp *
+                                                resources.displayMetrics.density
+                                        ).toInt()
 
                             dialog.window?.setLayout(
                                 widthInPixels,
                                 android.view.WindowManager.LayoutParams.WRAP_CONTENT
                             )
 
-
-                            // -------------------------
-                            // TITLE - BLACK
-                            // -------------------------
-
-                            dialog.findViewById<TextView>(
-                                resources.getIdentifier(
-                                    "alertTitle",
-                                    "id",
-                                    "android"
-                                )
-                            )?.setTextColor(
-                                android.graphics.Color.BLACK
-                            )
-
-
-                            // -------------------------
-                            // MESSAGE - BLACK
-                            // -------------------------
-
+                            // Message - black
                             dialog.findViewById<TextView>(
                                 android.R.id.message
                             )?.setTextColor(
                                 android.graphics.Color.BLACK
                             )
 
-
-                            // -------------------------
-                            // CANCEL
-                            // Keep existing color
-                            // -------------------------
-
+                            // Cancel - existing color
                             dialog.getButton(
                                 androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE
                             ).setTextColor(
                                 getColor(R.color.text_secondary)
                             )
 
-
-                            // -------------------------
-                            // DELETE - RED
-                            // -------------------------
-
+                            // Delete - red
                             dialog.getButton(
                                 androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE
                             ).setTextColor(
@@ -281,8 +276,8 @@ class ProductDetailsActivity : AppCompatActivity() {
                         }
 
                         dialog.show()
-
                     }
+
                 }
             }
         }
