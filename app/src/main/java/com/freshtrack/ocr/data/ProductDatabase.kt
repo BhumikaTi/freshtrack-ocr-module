@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Product::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class ProductDatabase : RoomDatabase() {
@@ -34,6 +34,15 @@ abstract class ProductDatabase : RoomDatabase() {
             }
         }
 
+        // Adds the barcode and product image link. Both are optional (NULL), so
+        // every product that is already saved stays exactly as it was (new edits by bhumika)
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE Product ADD COLUMN barcode TEXT")
+                database.execSQL("ALTER TABLE Product ADD COLUMN imageUrl TEXT")
+            }
+        }
+
         @Volatile
         private var INSTANCE: ProductDatabase? = null
 
@@ -47,7 +56,8 @@ abstract class ProductDatabase : RoomDatabase() {
                 )
                     .addMigrations(
                         MIGRATION_1_2,
-                        MIGRATION_2_3
+                        MIGRATION_2_3,
+                        MIGRATION_3_4
                     )
                     .build()
 

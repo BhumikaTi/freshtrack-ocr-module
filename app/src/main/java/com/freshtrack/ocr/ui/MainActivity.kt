@@ -1,3 +1,4 @@
+
 package com.freshtrack.ocr.ui
 
 import android.Manifest
@@ -40,49 +41,36 @@ class MainActivity : AppCompatActivity() {
         // Schedule daily expiry check
         scheduleExpiryNotifications()
 
-        // Scan a product
-        findViewById<MaterialButton>(
-            R.id.btnScanCamera
-        ).setOnClickListener {
-
-            startActivity(
-                Intent(
-                    this,
-                    AddOptionsActivity::class.java
+        // Scan a product (existing button)
+        findViewById<MaterialButton>(R.id.btnScanCamera)
+            .setOnClickListener {
+                startActivity(
+                    Intent(this, AddOptionsActivity::class.java)
                 )
-            )
-        }
+            }
 
-        // My Products
-        findViewById<MaterialButton>(
-            R.id.btnMyProducts
-        ).setOnClickListener {
-
-            startActivity(
-                Intent(
-                    this,
-                    ProductListActivity::class.java
+        // My Products (existing button)
+        findViewById<MaterialButton>(R.id.btnMyProducts)
+            .setOnClickListener {
+                startActivity(
+                    Intent(this, ProductListActivity::class.java)
                 )
-            )
-        }
+            }
+
+
     }
 
     private fun requestNotificationPermission() {
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-
             if (
                 ContextCompat.checkSelfPermission(
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-
                 ActivityCompat.requestPermissions(
                     this,
-                    arrayOf(
-                        Manifest.permission.POST_NOTIFICATIONS
-                    ),
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
                     NOTIFICATION_PERMISSION_REQUEST_CODE
                 )
             }
@@ -90,19 +78,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun scheduleExpiryNotifications() {
-
         val workRequest =
             PeriodicWorkRequestBuilder<ExpiryNotificationWorker>(
                 1,
                 TimeUnit.DAYS
             ).build()
 
-        WorkManager
-            .getInstance(this)
-            .enqueueUniquePeriodicWork(
-                EXPIRY_WORK_NAME,
-                ExistingPeriodicWorkPolicy.UPDATE,
-                workRequest
-            )
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            EXPIRY_WORK_NAME,
+            ExistingPeriodicWorkPolicy.UPDATE,
+            workRequest
+        )
     }
 }
