@@ -11,5 +11,9 @@ data class Product(
     val expiryDate: String,
     val rawOcrText: String,
     val category: String = "Other",
-    val location: String = ""
+    val location: String = "",
+
+    // new edits by bhumika
+    val barcode: String? = null,
+    val imageUrl: String? = null
 )

@@ -152,6 +152,8 @@
 
             </LinearLayout>
 
+
+
             <!-- Product Cards -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -266,11 +268,13 @@
                                 android:textSize="13sp" />
 
                         </LinearLayout>
+
                     </LinearLayout>
 
                 </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
+
 
             <!-- Status -->
             <TextView
