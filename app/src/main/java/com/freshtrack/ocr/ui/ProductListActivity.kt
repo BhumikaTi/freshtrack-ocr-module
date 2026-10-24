@@ -24,6 +24,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import android.view.View
+import android.widget.ImageView
+import coil.load
 
 class ProductListActivity : AppCompatActivity() {
 
@@ -511,6 +514,15 @@ class ProductListActivity : AppCompatActivity() {
                 product.category
             )
 
+            intent.putExtra(
+                "location",
+                product.location
+            )
+            intent.putExtra(
+                "barcode",
+                product.barcode
+            )
+
             startActivity(intent)
         }
 
@@ -564,25 +576,55 @@ class ProductListActivity : AppCompatActivity() {
             deleteParams
         )
 
-        // Add content to card
+        // Left: text. Right: product photo (only when this item has one).
 
-        cardLayout.addView(nameText)
+        val textColumn = LinearLayout(this)
+        textColumn.orientation = LinearLayout.VERTICAL
 
-        cardLayout.addView(
-            categoryText,
-            categoryParams
+        textColumn.addView(nameText)
+        textColumn.addView(categoryText, categoryParams)
+        textColumn.addView(expiryText, expiryParams)
+        textColumn.addView(statusText, statusParams)
+
+        val topRow = LinearLayout(this)
+        topRow.orientation = LinearLayout.HORIZONTAL
+        topRow.gravity = Gravity.CENTER_VERTICAL
+
+        topRow.addView(
+            textColumn,
+            LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
         )
 
-        cardLayout.addView(
-            expiryText,
-            expiryParams
-        )
+        val savedImageUrl = product.imageUrl
 
-        cardLayout.addView(
-            statusText,
-            statusParams
-        )
+        if (!savedImageUrl.isNullOrBlank()) {
 
+            val productImage = ImageView(this)
+
+            productImage.scaleType = ImageView.ScaleType.FIT_CENTER
+            productImage.contentDescription = product.productName
+
+            val imageParams = LinearLayout.LayoutParams(
+                dp(72),
+                dp(72)
+            )
+
+            imageParams.marginStart = dp(10)
+
+            topRow.addView(productImage, imageParams)
+
+            productImage.load(savedImageUrl) {
+                crossfade(true)
+                // A broken link should not leave an empty box in the card.
+                listener(onError = { _, _ -> productImage.visibility = View.GONE })
+            }
+        }
+
+        cardLayout.addView(topRow)
         cardLayout.addView(buttonLayout)
 
         card.addView(cardLayout)

@@ -7,13 +7,13 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.net.Uri
 import android.os.Bundle
-import com.google.android.material.button.MaterialButton
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.widget.ImageView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.freshtrack.ocr.ExpiryParser
 import com.freshtrack.ocr.ImagePreprocessor
@@ -21,7 +21,7 @@ import com.freshtrack.ocr.OcrResultListener
 import com.freshtrack.ocr.OcrSource
 import com.freshtrack.ocr.OcrTextExtractor
 import com.freshtrack.ocr.R
-import com.freshtrack.ocr.ui.CropOverlayView
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.math.max
@@ -42,11 +42,28 @@ class CropConfirmActivity :
         const val EXTRA_URI =
             "extra_uri"
 
+        // Set by the Add Product screen: read the date and hand it back,
+        // instead of opening the Result screen.
+        const val EXTRA_RETURN_DATE_ONLY =
+            "extra_return_date_only"
+
+        const val EXTRA_EXPIRY_DATE_RESULT =
+            "extra_expiry_date_result"
+
+        // Sent back when the user taps ENTER DATE, so the camera screen
+        // closes too and the Add Product screen is shown.
+        const val RESULT_ENTER_MANUALLY =
+            android.app.Activity.RESULT_FIRST_USER
+
         private const val MIN_SCALE =
             1f
 
         private const val MAX_SCALE =
             5f
+
+        // If the OCR step has not answered after this long, tell the user.
+        private const val OCR_NO_REPLY_TIMEOUT_MS =
+            6000L
     }
 
     private lateinit var imageView:
@@ -95,6 +112,42 @@ class CropConfirmActivity :
     private var cropModeActive =
         false
 
+    // True when the Add Product screen opened this screen only to read a date.
+    private var returnDateOnly =
+        false
+
+    // Safety net: if the OCR step never reports back, tell the user
+    // instead of leaving them on a silent screen.
+    private val uiHandler =
+        Handler(Looper.getMainLooper())
+
+    private var ocrReplyReceived =
+        false
+
+    private val noReplyRunnable =
+        Runnable {
+
+            if (
+                !ocrReplyReceived &&
+                !isFinishing
+            ) {
+
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(
+                        "Couldn't read the image"
+                    )
+                    .setMessage(
+                        "No text was found. Try cropping a little wider around " +
+                                "the date, with good light and no glare."
+                    )
+                    .setPositiveButton(
+                        "OK",
+                        null
+                    )
+                    .show()
+            }
+        }
+
     override fun onCreate(
         savedInstanceState: Bundle?
     ) {
@@ -135,6 +188,12 @@ class CropConfirmActivity :
         ocrTextExtractor =
             OcrTextExtractor(
                 this
+            )
+
+        returnDateOnly =
+            intent.getBooleanExtra(
+                EXTRA_RETURN_DATE_ONLY,
+                false
             )
 
         loadSourceImage()
@@ -390,6 +449,7 @@ class CropConfirmActivity :
             Toast.LENGTH_SHORT
         ).show()
     }
+
     private fun enterCropMode() {
 
         val width = cropOverlay.width.toFloat()
@@ -430,6 +490,28 @@ class CropConfirmActivity :
 
     /*
      * ------------------------------------------------------
+     * START OCR (with the "no answer" safety net)
+     * ------------------------------------------------------
+     */
+
+    private fun startOcr(bitmap: Bitmap) {
+
+        ocrReplyReceived = false
+
+        uiHandler.removeCallbacks(noReplyRunnable)
+        uiHandler.postDelayed(
+            noReplyRunnable,
+            OCR_NO_REPLY_TIMEOUT_MS
+        )
+
+        ocrTextExtractor.extractFromBitmap(
+            bitmap,
+            source
+        )
+    }
+
+    /*
+     * ------------------------------------------------------
      * CONFIRM SCAN
      * ------------------------------------------------------
      */
@@ -460,10 +542,7 @@ class CropConfirmActivity :
                     bitmap
                 )
 
-            ocrTextExtractor.extractFromBitmap(
-                enhancedFull,
-                source
-            )
+            startOcr(enhancedFull)
 
             return
         }
@@ -525,10 +604,7 @@ class CropConfirmActivity :
                 croppedBitmap
             )
 
-        ocrTextExtractor.extractFromBitmap(
-            enhancedBitmap,
-            source
-        )
+        startOcr(enhancedBitmap)
     }
 
     /*
@@ -873,6 +949,10 @@ class CropConfirmActivity :
         source: OcrSource
     ) {
 
+        // The OCR step answered, so the "no answer" safety net is not needed.
+        ocrReplyReceived = true
+        uiHandler.removeCallbacks(noReplyRunnable)
+
         Log.d(
             TAG,
             "========== OCR RESULT RECEIVED =========="
@@ -944,6 +1024,22 @@ class CropConfirmActivity :
         )
 
         runOnUiThread {
+
+            // Opened from the Add Product screen: send the date back.
+            if (returnDateOnly) {
+
+                setResult(
+                    RESULT_OK,
+                    Intent().putExtra(
+                        EXTRA_EXPIRY_DATE_RESULT,
+                        expiryDate
+                    )
+                )
+
+                finish()
+
+                return@runOnUiThread
+            }
 
             val intent =
                 Intent(
@@ -1028,20 +1124,30 @@ class CropConfirmActivity :
                 null
             )
             .setPositiveButton(
-                "ADD MANUALLY"
+                if (returnDateOnly) "ENTER DATE" else "ADD MANUALLY"
             ) { _, _ ->
 
-                val intent =
-                    Intent(
-                        this,
-                        AddProductActivity::class.java
+                if (returnDateOnly) {
+
+                    // Go back to the Add Product screen. Opening another one
+                    // would lose what is already typed.
+                    setResult(RESULT_ENTER_MANUALLY)
+                    finish()
+
+                } else {
+
+                    val intent =
+                        Intent(
+                            this,
+                            AddProductActivity::class.java
+                        )
+
+                    startActivity(
+                        intent
                     )
 
-                startActivity(
-                    intent
-                )
-
-                finish()
+                    finish()
+                }
             }
             .show()
     }
@@ -1053,6 +1159,8 @@ class CropConfirmActivity :
      */
 
     override fun onDestroy() {
+
+        uiHandler.removeCallbacks(noReplyRunnable)
 
         ocrTextExtractor.close()
 

@@ -72,6 +72,7 @@ class MainActivity : AppCompatActivity() {
         requestNotificationPermission()
         scheduleExpiryNotifications()
 
+        // Scan a product.
         findViewById<MaterialButton>(R.id.btnScanCamera)
             .setOnClickListener {
                 startActivity(
@@ -79,6 +80,7 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
+        // Open the complete product list.
         findViewById<MaterialButton>(R.id.btnMyProducts)
             .setOnClickListener {
                 startActivity(
@@ -86,13 +88,13 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
-        // View all still opens the complete Shopping List.
+        // Open the complete shopping list.
         findViewById<MaterialButton>(R.id.btnViewShoppingList)
             .setOnClickListener {
                 openShoppingList()
             }
 
-        // Home-screen Add item opens the dialog immediately.
+        // Add a shopping item directly from the home screen.
         findViewById<MaterialButton>(R.id.btnAddShoppingItem)
             .setOnClickListener {
                 showAddShoppingItemDialog()
@@ -121,6 +123,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 val products =
                     database.productDao().getRecentProducts()
+
                 displayRecentProducts(products)
             } catch (exception: Exception) {
                 showProductMessage("Couldn't load products.")
@@ -204,6 +207,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 val items =
                     database.shoppingItemDao().getRecentItems()
+
                 displayShoppingPreview(items)
             } catch (exception: Exception) {
                 showShoppingMessage("Couldn't load shopping items.")

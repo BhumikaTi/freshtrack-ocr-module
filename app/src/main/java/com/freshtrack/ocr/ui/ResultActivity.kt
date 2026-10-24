@@ -86,11 +86,14 @@ class ResultActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            btnSaveProduct.isEnabled = false
+
             lifecycleScope.launch {
                 val product = Product(
                     productName = enteredProductName,
                     expiryDate = enteredExpiryDate,
-                    rawOcrText = ""
+                    rawOcrText =
+                        intent.getStringExtra(EXTRA_RAW_TEXT) ?: ""
                 )
 
                 productDao.insertProduct(product)
@@ -101,7 +104,6 @@ class ResultActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
 
-                // Open My Products after saving
                 startActivity(
                     Intent(
                         this@ResultActivity,
@@ -118,6 +120,9 @@ class ResultActivity : AppCompatActivity() {
 
         const val EXTRA_EXPIRY_DATE =
             "extra_expiry_date"
+
+        const val EXTRA_RAW_TEXT =
+            "extra_raw_text"
 
         const val EXTRA_PRODUCT_NAME =
             "extra_product_name"

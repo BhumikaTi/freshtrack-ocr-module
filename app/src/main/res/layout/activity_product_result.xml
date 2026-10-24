@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F8F5">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:background="#FFFFFF"
+        android:elevation="2dp">
+
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Go back"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="#176B42" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Product details"
+                android:textColor="#183C2B"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/barcodeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#68766D"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Scrollable content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="false"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:paddingBottom="28dp">
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="16dp"
+                android:indeterminateTint="#188653" />
+
+            <!-- Product overview -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="18dp"
+                android:background="#FFFFFF"
+                android:elevation="2dp">
+
+                <ImageView
+                    android:id="@+id/productImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="190dp"
+                    android:layout_marginBottom="16dp"
+                    android:contentDescription="Product image"
+                    android:scaleType="fitCenter"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/productName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#183C2B"
+                    android:textSize="25sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/productBrand"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:textColor="#65736A"
+                    android:textSize="16sp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/messageText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:padding="12dp"
+                    android:background="#FFF4D8"
+                    android:textColor="#855600"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="3dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <!-- Ingredients -->
+            <LinearLayout
+                android:id="@+id/ingredientsSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="vertical"
+                android:padding="18dp"
+                android:background="#FFFFFF"
+                android:elevation="2dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Ingredients"
+                    android:textColor="#176B42"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Product ingredient list"
+                    android:textColor="#7A877E"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/ingredientsText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textColor="#34483B"
+                    android:textSize="15sp"
+                    android:lineSpacingExtra="5dp" />
+            </LinearLayout>
+
+            <!-- Allergen information -->
+            <LinearLayout
+                android:id="@+id/allergenCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:background="#FFF0EF">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Allergen information"
+                    android:textColor="#B42318"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/allergensWarning"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#8D2923"
+                    android:textSize="15sp"
+                    android:lineSpacingExtra="4dp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/allergenUnknownNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="No allergen data is available. This does not mean the product is allergen-free."
+                    android:textColor="#8D2923"
+                    android:textSize="13sp"
+                    android:lineSpacingExtra="3dp" />
+            </LinearLayout>
+
+            <!-- Nutrition -->
+            <LinearLayout
+                android:id="@+id/nutritionCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="vertical"
+                android:padding="18dp"
+                android:background="#FFFFFF"
+                android:elevation="2dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Nutrition facts"
+                    android:textColor="#176B42"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Values per 100 g, where available"
+                    android:textColor="#7A877E"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/nutritionFacts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textColor="#34483B"
+                    android:textSize="15sp"
+                    android:lineSpacingExtra="7dp" />
+            </LinearLayout>
+
+            <!-- Source and verification note -->
+            <TextView
+                android:id="@+id/dataNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:padding="14dp"
+                android:background="#EAF5ED"
+                android:text="Product information can be incomplete. Check the packaging for the most accurate ingredients and allergen details."
+                android:textColor="#315B40"
+                android:textSize="13sp"
+                android:lineSpacingExtra="4dp"
+                android:visibility="gone" />
+
+            <!-- Save product -->
+            <LinearLayout
+                android:id="@+id/addCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:padding="18dp"
+                android:background="#FFFFFF"
+                android:elevation="2dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Save to My Products"
+                    android:textColor="#183C2B"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Add an expiry date to start tracking this product."
+                    android:textColor="#65736A"
+                    android:textSize="13sp" />
+
+                <EditText
+                    android:id="@+id/productNameInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="Product name"
+                    android:inputType="textCapWords"
+                    android:maxLines="2"
+                    android:padding="12dp"
+                    android:textColor="#183C2B"
+                    android:textColorHint="#87948B"
+                    android:backgroundTint="#188653" />
+
+                <Button
+                    android:id="@+id/addButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="12dp"
+                    android:backgroundTint="#188653"
+                    android:text="Continue to expiry date"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

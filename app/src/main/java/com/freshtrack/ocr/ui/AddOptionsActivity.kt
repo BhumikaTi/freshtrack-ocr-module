@@ -38,6 +38,12 @@ class AddOptionsActivity : AppCompatActivity() {
                 Intent(this, CameraScanActivity::class.java)
             )
         }
+        // Barcode
+        findViewById<MaterialButton>(R.id.btnBarcode).setOnClickListener {
+            startActivity(
+                Intent(this, Barcodescanactivity::class.java)
+            )
+        }
 
         // Gallery / Upload
         findViewById<MaterialButton>(R.id.btnGallery).setOnClickListener {

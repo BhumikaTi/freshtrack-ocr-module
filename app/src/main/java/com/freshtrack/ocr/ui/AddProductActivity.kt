@@ -26,7 +26,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
-
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 class AddProductActivity : AppCompatActivity() {
 
     private lateinit var etProductName: TextInputEditText
@@ -56,6 +57,34 @@ class AddProductActivity : AppCompatActivity() {
     // Non-null = editing an existing product.
     private var productId: Int? = null
 
+    // marking to change in case of error(neko)
+    private var barcode: String? = null
+    private var imageUrl: String? = null
+    // Reads the expiry date from a photo. The existing OCR screen sends the date
+    // back here, and it fills the expiry field.
+    private val scanDateLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val date = result.data
+                    ?.getStringExtra(CropConfirmActivity.EXTRA_EXPIRY_DATE_RESULT)
+
+                if (!date.isNullOrBlank()) {
+                    etExpiryDate.setText(date)
+                }
+            }
+        }
+
+    private val pickDateImage =
+        registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            if (uri != null) {
+                scanDateLauncher.launch(
+                    Intent(this, CropConfirmActivity::class.java)
+                        .putExtra(CropConfirmActivity.EXTRA_URI, uri.toString())
+                        .putExtra(CropConfirmActivity.EXTRA_RETURN_DATE_ONLY, true)
+                )
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -80,9 +109,28 @@ class AddProductActivity : AppCompatActivity() {
         val database = ProductDatabase.getDatabase(this)
         productDao = database.productDao()
 
-        // Check whether this screen was opened for editing
+        // Marking in case error occur (neko/bhumika)
         productId = intent.getIntExtra("productId", -1).takeIf {
             it != -1
+        }
+
+        barcode = intent.getStringExtra("barcode")
+        imageUrl = intent.getStringExtra("imageUrl")
+
+        // The scan icons only make sense for products that came from a barcode scan.
+        val fromBarcode = !barcode.isNullOrBlank()
+
+        findViewById<LinearLayout>(R.id.expiryScanIcons).visibility =
+            if (fromBarcode) android.view.View.VISIBLE else android.view.View.GONE
+
+        if (fromBarcode) {
+            // Keep typed dates from running underneath the two icons.
+            etExpiryDate.setPaddingRelative(
+                etExpiryDate.paddingStart,
+                etExpiryDate.paddingTop,
+                dp(104),
+                etExpiryDate.paddingBottom
+            )
         }
 
         // Get existing product information when editing
@@ -118,6 +166,19 @@ class AddProductActivity : AppCompatActivity() {
 
         etExpiryDate.setOnClickListener {
             showDatePicker()
+        }
+
+        findViewById<android.widget.ImageButton>(R.id.btnExpiryCamera).setOnClickListener {
+            scanDateLauncher.launch(
+                Intent(this, CameraScanActivity::class.java)
+                    .putExtra(CropConfirmActivity.EXTRA_RETURN_DATE_ONLY, true)
+            )
+        }
+
+        findViewById<android.widget.ImageButton>(R.id.btnExpiryGallery).setOnClickListener {
+            pickDateImage.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
         }
 
         findViewById<MaterialButton>(R.id.btnSaveProduct).setOnClickListener {
@@ -540,7 +601,9 @@ class AddProductActivity : AppCompatActivity() {
                     expiryDate = expiryDate,
                     rawOcrText = "",
                     location = location,
-                    category = category
+                    category = category,
+                    barcode = barcode,
+                    imageUrl = imageUrl
                 )
 
                 productDao.insertProduct(product)
@@ -557,14 +620,22 @@ class AddProductActivity : AppCompatActivity() {
                 // UPDATE EXISTING PRODUCT
                 // -------------------------
 
-                val updatedProduct = Product(
-                    id = existingId,
-                    productName = productName,
-                    expiryDate = expiryDate,
-                    rawOcrText = "",
-                    location = location,
-                    category = category
-                )
+                // Makring in case error (neko/bhumika)
+                val existing = productDao.getProductById(existingId)
+
+                val updatedProduct = (
+                        existing ?: Product(
+                            id = existingId,
+                            productName = productName,
+                            expiryDate = expiryDate,
+                            rawOcrText = ""
+                        )
+                        ).copy(
+                        productName = productName,
+                        expiryDate = expiryDate,
+                        location = location,
+                        category = category
+                    )
 
                 productDao.updateProduct(updatedProduct)
 
@@ -588,6 +659,7 @@ class AddProductActivity : AppCompatActivity() {
 
             startActivity(intent)
 
+            setResult(RESULT_OK)
             finish()
         }
     }
