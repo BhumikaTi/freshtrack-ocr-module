@@ -26,43 +26,63 @@
         <activity
             android:name=".ui.ShoppingListActivity"
             android:exported="false" />
+
         <activity
             android:name=".ui.AddProductActivity"
             android:exported="false" />
+
         <activity
             android:name=".ui.ProductListActivity"
             android:exported="false" />
+
         <activity
             android:name=".ui.ResultActivity"
             android:exported="false" />
+
         <activity
             android:name=".ui.ManualEntryActivity"
             android:exported="false" />
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.OcrTest">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".ui.CameraScanActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.OcrTest" />
+
+        <activity
+            android:name=".ui.Barcodescanactivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.OcrTest" />
+
+        <activity
+            android:name=".ui.ProductResultActivity"
+            android:exported="false"
+            android:theme="@style/Theme.OcrTest" />
+
         <activity
             android:name=".ui.CropConfirmActivity"
             android:exported="false"
             android:theme="@style/Theme.OcrTest" />
+
         <activity
             android:name=".ui.AddOptionsActivity"
             android:exported="false" />
+
         <activity
             android:name=".ui.ProductDetailsActivity"
             android:exported="false" />
+
     </application>
 
 </manifest>

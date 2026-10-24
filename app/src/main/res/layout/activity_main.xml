@@ -69,10 +69,9 @@
                         android:layout_height="40dp"
                         android:layout_gravity="center_horizontal"
                         android:gravity="center"
-                        android:text="⌁"
+                        android:text="ðŸ“·"
                         android:textColor="@color/green_primary"
-                        android:textSize="30sp"
-                        android:textStyle="bold" />
+                        android:textSize="30sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -110,7 +109,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Recently Added Heading -->
+            <!-- Your Products Heading -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -150,7 +149,7 @@
 
             </LinearLayout>
 
-            <!-- Recent Products Container: populated from Room later -->
+            <!-- Dynamic Recent Products -->
             <LinearLayout
                 android:id="@+id/layoutRecentProducts"
                 android:layout_width="match_parent"
@@ -158,13 +157,12 @@
                 android:layout_marginTop="12dp"
                 android:orientation="vertical">
 
-                <!-- Empty state shown until real product data is connected -->
                 <TextView
                     android:id="@+id/tvRecentProductsEmpty"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="16dp"
                     android:gravity="center"
+                    android:padding="16dp"
                     android:text="No products yet. Scan a product to get started."
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
@@ -211,7 +209,7 @@
 
             </LinearLayout>
 
-            <!-- Shopping List Preview: populated from Room later -->
+            <!-- Dynamic Shopping List Preview -->
             <LinearLayout
                 android:id="@+id/layoutShoppingPreview"
                 android:layout_width="match_parent"
@@ -223,8 +221,8 @@
                     android:id="@+id/tvShoppingListEmpty"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="16dp"
                     android:gravity="center"
+                    android:padding="16dp"
                     android:text="Your shopping list is empty."
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
@@ -237,12 +235,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="10dp"
+                android:backgroundTint="@color/green_primary"
                 android:text="+ Add item"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white"
                 android:textSize="15sp"
                 android:textStyle="bold"
-                android:backgroundTint="@color/green_primary"
                 app:cornerRadius="14dp" />
 
             <!-- Status -->
