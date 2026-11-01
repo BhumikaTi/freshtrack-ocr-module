@@ -18,14 +18,6 @@ sealed class GeminiResult {
     data class Unavailable(val reason: String) : GeminiResult()
 }
 
-/**
- * Fallback for barcodes that Open Food Facts doesn't know. It asks Gemini,
- * with Google Search switched on, which product the barcode belongs to.
- *
- * What it can give: name, brand, a short category, and an ingredients list
- * if a web page states one. What it cannot give: a product photo, a nutrition
- * table, or trustworthy allergen data. None of those are filled in.
- */
 class GeminiProductFinder(
     private val service: GeminiService = GeminiClient.service,
     private val apiKey: String = BuildConfig.GEMINI_API_KEY
@@ -90,7 +82,7 @@ class GeminiProductFinder(
 
         return GeminiRequest(
             contents = listOf(GeminiContent(listOf(GeminiPart(prompt)))),
-            tools = listOf(GeminiTool())
+            tools = if (BuildConfig.GEMINI_USE_SEARCH) listOf(GeminiTool()) else null
         )
     }
 
@@ -143,6 +135,6 @@ class GeminiProductFinder(
         private const val TAG = "FreshTrackGemini"
 
 
-        private const val MODEL = "gemini-3.1-flash-lite"
+        private val MODEL = BuildConfig.GEMINI_CHAT_MODEL
     }
 }

@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 
 data class GeminiRequest(
     val contents: List<GeminiContent>,
-    val tools: List<GeminiTool>
+    val tools: List<GeminiTool>? = null
 )
 
 data class GeminiContent(val parts: List<GeminiPart>?)

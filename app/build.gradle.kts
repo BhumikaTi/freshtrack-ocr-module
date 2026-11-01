@@ -21,6 +21,19 @@ android {
             "GEMINI_API_KEY",
             "\"${localProps.getProperty("GEMINI_API_KEY", "")}\""
         )
+        // Optional overrides in local.properties (handy while testing on the free tier):
+        //   GEMINI_CHAT_MODEL=gemini-3.1-flash-lite
+        //   GEMINI_USE_SEARCH=false   (barcode AI fallback uses Google Search grounding, which the free tier may not allow)
+        buildConfigField(
+            "String",
+            "GEMINI_CHAT_MODEL",
+            "\"${localProps.getProperty("GEMINI_CHAT_MODEL", "gemini-3.1-flash-lite")}\""
+        )
+        buildConfigField(
+            "boolean",
+            "GEMINI_USE_SEARCH",
+            localProps.getProperty("GEMINI_USE_SEARCH", "false")
+        )
         applicationId = "com.freshtrack.ocr"
         minSdk = 26
         targetSdk = 36
@@ -97,6 +110,7 @@ dependencies {
 
     // lifecycleScope, used in ProductResultActivity
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4") // ChatViewModel
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     implementation("io.coil-kt:coil:2.7.0")                  // loads product photos

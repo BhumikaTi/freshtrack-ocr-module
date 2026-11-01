@@ -19,9 +19,16 @@ interface GeminiService {
         @Path("model") model: String,
         @Body request: GeminiRequest
     ): retrofit2.Response<GeminiResponse>
+
+    // Same endpoint, used by the chatbot (system prompt + multi-turn history, no search tool).
+    @POST("v1beta/models/{model}:generateContent")
+    suspend fun chat(
+        @Path("model") model: String,
+        @Body request: ChatRequest
+    ): retrofit2.Response<GeminiResponse>
 }
 
-/** Adds the key as a header (not in the URL), so it never ends up in a logged web address. */
+
 private class ApiKeyInterceptor(private val apiKey: String) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request().newBuilder()

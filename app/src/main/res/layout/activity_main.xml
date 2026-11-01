@@ -109,6 +109,22 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Ask AI -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAskAi"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="12dp"
+                android:text="Ask FreshTrack AI"
+                android:textAllCaps="false"
+                android:textColor="@color/green_primary"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                app:cornerRadius="14dp"
+                app:strokeColor="@color/green_primary"
+                app:strokeWidth="1dp" />
+
             <!-- Your Products Heading -->
             <LinearLayout
                 android:layout_width="match_parent"

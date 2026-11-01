@@ -80,6 +80,14 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
+        // Chat with the AI assistant.
+        findViewById<MaterialButton>(R.id.btnAskAi)
+            .setOnClickListener {
+                startActivity(
+                    Intent(this, ChatActivity::class.java)
+                )
+            }
+
         // Open the complete product list.
         findViewById<MaterialButton>(R.id.btnMyProducts)
             .setOnClickListener {
