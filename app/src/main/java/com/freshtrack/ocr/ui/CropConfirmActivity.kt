@@ -1040,36 +1040,23 @@ class CropConfirmActivity :
 
                 return@runOnUiThread
             }
-
-            val intent =
-                Intent(
-                    this,
-                    ResultActivity::class.java
-                )
+            val intent = Intent(
+                this,
+                AddProductActivity::class.java
+            )
 
             intent.putExtra(
-                ResultActivity.EXTRA_EXPIRY_DATE,
+                "productName",
+                parsed.productName ?: ""
+            )
+
+            intent.putExtra(
+                "expiryDate",
                 expiryDate
             )
 
-            /*
-             * Pass the parser's best-effort
-             * product name to ResultActivity.
-             */
-            if (
-                !parsed.productName.isNullOrBlank()
-            ) {
-
-                intent.putExtra(
-                    ResultActivity.EXTRA_PRODUCT_NAME,
-                    parsed.productName
-                )
-            }
-
-            startActivity(
-                intent
-            )
-
+            startActivity(intent)
+            finish()
         }
     }
 
