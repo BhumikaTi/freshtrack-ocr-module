@@ -1,5 +1,6 @@
 package com.freshtrack.ocr.ui
 
+import com.freshtrack.ocr.auth.CurrentUserProvider
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -161,7 +162,10 @@ class ProductListActivity : AppCompatActivity() {
 
         loadJob = lifecycleScope.launch {
 
-            allProducts = productDao.getAllProducts()
+            val userId = CurrentUserProvider.getUserId()
+                ?: return@launch
+
+            allProducts = productDao.getAllProducts(userId)
 
             applySearchAndFilter()
         }
@@ -531,8 +535,10 @@ class ProductListActivity : AppCompatActivity() {
         deleteButton.setOnClickListener {
 
             lifecycleScope.launch {
+                val userId = CurrentUserProvider.getUserId()
+                    ?: return@launch
 
-                productDao.deleteProduct(product)
+                productDao.deleteProductById(product.id, userId)
 
                 loadProducts()
             }

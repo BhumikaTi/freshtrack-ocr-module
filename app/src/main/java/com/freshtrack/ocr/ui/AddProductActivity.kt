@@ -1,5 +1,6 @@
 package com.freshtrack.ocr.ui
 
+import com.freshtrack.ocr.auth.CurrentUserProvider
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -562,15 +563,11 @@ class AddProductActivity : AppCompatActivity() {
 
     private fun saveProduct() {
 
-        val productName =
-            etProductName.text.toString().trim()
+        val productName = etProductName.text.toString().trim()
+        val expiryDate = etExpiryDate.text.toString().trim()
+        val location = etLocation.text.toString().trim()
+        val category = actvCategory.text.toString().trim()
 
-        val expiryDate =
-            etExpiryDate.text.toString().trim()
-        val location =
-            etLocation.text.toString().trim()
-        val category =
-            actvCategory.text.toString().trim()
         if (category !in categories) {
             actvCategory.error = "Please select a valid category"
             return
@@ -587,15 +584,21 @@ class AddProductActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
+            // Both new and edited products must belong to the signed-in user.
+            val userId = CurrentUserProvider.getUserId()
+            if (userId.isNullOrBlank()) {
+                Toast.makeText(
+                    this@AddProductActivity,
+                    "Please log in again to save products.",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@launch
+            }
 
             val existingId = productId
 
             if (existingId == null) {
-
-                // -------------------------
-                // ADD NEW PRODUCT
-                // -------------------------
-
+                // Add a new product for the current user.
                 val product = Product(
                     productName = productName,
                     expiryDate = expiryDate,
@@ -603,7 +606,8 @@ class AddProductActivity : AppCompatActivity() {
                     location = location,
                     category = category,
                     barcode = barcode,
-                    imageUrl = imageUrl
+                    imageUrl = imageUrl,
+                    userId = userId
                 )
 
                 productDao.insertProduct(product)
@@ -615,27 +619,24 @@ class AddProductActivity : AppCompatActivity() {
                 ).show()
 
             } else {
+                // Only allow editing a product owned by the current user.
+                val existing = productDao.getProductById(existingId, userId)
 
-                // -------------------------
-                // UPDATE EXISTING PRODUCT
-                // -------------------------
+                if (existing == null) {
+                    Toast.makeText(
+                        this@AddProductActivity,
+                        "Product not found in your account.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@launch
+                }
 
-                // Makring in case error (neko/bhumika)
-                val existing = productDao.getProductById(existingId)
-
-                val updatedProduct = (
-                        existing ?: Product(
-                            id = existingId,
-                            productName = productName,
-                            expiryDate = expiryDate,
-                            rawOcrText = ""
-                        )
-                        ).copy(
-                        productName = productName,
-                        expiryDate = expiryDate,
-                        location = location,
-                        category = category
-                    )
+                val updatedProduct = existing.copy(
+                    productName = productName,
+                    expiryDate = expiryDate,
+                    location = location,
+                    category = category
+                )
 
                 productDao.updateProduct(updatedProduct)
 
@@ -646,8 +647,7 @@ class AddProductActivity : AppCompatActivity() {
                 ).show()
             }
 
-            // Return to Product List
-
+            // Return to Product List.
             val intent = Intent(
                 this@AddProductActivity,
                 ProductListActivity::class.java
@@ -658,10 +658,10 @@ class AddProductActivity : AppCompatActivity() {
                         Intent.FLAG_ACTIVITY_SINGLE_TOP
 
             startActivity(intent)
-
             setResult(RESULT_OK)
             finish()
         }
     }
 }
+
 

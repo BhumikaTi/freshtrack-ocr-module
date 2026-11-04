@@ -1,5 +1,6 @@
 package com.freshtrack.ocr.ui
 
+import com.freshtrack.ocr.auth.CurrentUserProvider
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -47,8 +48,10 @@ class ProductDetailsActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
 
-                val product =
-                    productDao.getProductById(productId)
+                val userId = CurrentUserProvider.getUserId()
+                    ?: return@launch
+
+                val product = productDao.getProductById(productId, userId)
 
                 if (product != null) {
 
@@ -216,8 +219,10 @@ class ProductDetailsActivity : AppCompatActivity() {
                                 ) { _, _ ->
 
                                     lifecycleScope.launch {
+                                        val userId = CurrentUserProvider.getUserId()
+                                            ?: return@launch
 
-                                        productDao.deleteProduct(product)
+                                        productDao.deleteProductById(productId, userId)
 
                                         Toast.makeText(
                                             this@ProductDetailsActivity,

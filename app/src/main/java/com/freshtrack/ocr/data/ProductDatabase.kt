@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Product::class, ShoppingItem::class],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class ProductDatabase : RoomDatabase() {
@@ -40,7 +40,6 @@ abstract class ProductDatabase : RoomDatabase() {
             }
         }
 
-        // Version 3 -> 4: add barcode and image fields.
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.addProductColumnIfMissing("barcode")
@@ -48,7 +47,6 @@ abstract class ProductDatabase : RoomDatabase() {
             }
         }
 
-        // Version 4 -> 5: create the shopping-list table.
         private val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
@@ -65,7 +63,6 @@ abstract class ProductDatabase : RoomDatabase() {
             }
         }
 
-        // Version 5 -> 6: accommodate either branch's version-5 schema.
         private val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.addProductColumnIfMissing("barcode")
@@ -93,9 +90,26 @@ abstract class ProductDatabase : RoomDatabase() {
                     database.execSQL(
                         """
                         ALTER TABLE shopping_items
-                        ADD COLUMN inventoryTransferred
-                        INTEGER NOT NULL DEFAULT 0
+                        ADD COLUMN inventoryTransferred INTEGER NOT NULL DEFAULT 0
                         """.trimIndent()
+                    )
+                }
+            }
+        }
+
+        // Version 6 -> 7: add userId to both tables.
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+
+                if (!database.hasColumn("Product", "userId")) {
+                    database.execSQL(
+                        "ALTER TABLE Product ADD COLUMN userId TEXT NOT NULL DEFAULT ''"
+                    )
+                }
+
+                if (!database.hasColumn("shopping_items", "userId")) {
+                    database.execSQL(
+                        "ALTER TABLE shopping_items ADD COLUMN userId TEXT NOT NULL DEFAULT ''"
                     )
                 }
             }
@@ -116,7 +130,8 @@ abstract class ProductDatabase : RoomDatabase() {
                         MIGRATION_2_3,
                         MIGRATION_3_4,
                         MIGRATION_4_5,
-                        MIGRATION_5_6
+                        MIGRATION_5_6,
+                        MIGRATION_6_7
                     )
                     .build()
 
@@ -140,7 +155,6 @@ private fun SupportSQLiteDatabase.hasColumn(
             }
         }
     }
-
     return false
 }
 

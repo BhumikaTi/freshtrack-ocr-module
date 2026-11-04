@@ -11,6 +11,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.freshtrack.ocr.auth.CurrentUserProvider
+import com.freshtrack.ocr.data.Product
 import com.freshtrack.ocr.data.ProductDatabase
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -39,11 +41,16 @@ class ExpiryNotificationWorker(
 
         createNotificationChannel()
 
+        // Get currently logged-in user's ID.
+        val userId = CurrentUserProvider.getUserId()
+            ?: return Result.success()
+
         val database =
             ProductDatabase.getDatabase(applicationContext)
 
+        // Fetch only this user's products.
         val products =
-            database.productDao().getAllProducts()
+            database.productDao().getAllProducts(userId)
 
         val today = LocalDate.now()
 
@@ -63,7 +70,8 @@ class ExpiryNotificationWorker(
 
                 sendExpiryNotification(
                     product = product,
-                    daysRemaining = daysRemaining
+                    daysRemaining = daysRemaining,
+                    userId = userId
                 )
             }
         }
@@ -73,12 +81,14 @@ class ExpiryNotificationWorker(
 
     @SuppressLint("MissingPermission")
     private fun sendExpiryNotification(
-        product: com.freshtrack.ocr.data.Product,
-        daysRemaining: Long
+        product: Product,
+        daysRemaining: Long,
+        userId: String
     ) {
 
+        // Include user ID to keep account reminders separate.
         val preferenceKey =
-            "notification_${product.id}_${product.expiryDate}_$daysRemaining"
+            "notification_${userId}_${product.id}_${product.expiryDate}_$daysRemaining"
 
         val preferences =
             applicationContext.getSharedPreferences(
@@ -135,10 +145,15 @@ class ExpiryNotificationWorker(
             return
         }
 
+        // Use a user-specific notification ID.
+        val notificationId =
+            31 * (31 * userId.hashCode() + product.id) +
+                    daysRemaining.toInt()
+
         NotificationManagerCompat
             .from(applicationContext)
             .notify(
-                product.id * 10 + daysRemaining.toInt(),
+                notificationId,
                 notification
             )
 
@@ -164,7 +179,6 @@ class ExpiryNotificationWorker(
                     CHANNEL_NAME,
                     NotificationManager.IMPORTANCE_DEFAULT
                 ).apply {
-
                     description =
                         "Notifications for products approaching their expiry date"
                 }
@@ -195,9 +209,7 @@ class ExpiryNotificationWorker(
         try {
             return LocalDate.parse(
                 cleaned,
-                DateTimeFormatter.ofPattern(
-                    "dd/MM/yyyy"
-                )
+                DateTimeFormatter.ofPattern("dd/MM/yyyy")
             )
         } catch (_: DateTimeParseException) {
         }
@@ -229,37 +241,25 @@ class ExpiryNotificationWorker(
         // MM/yyyy
         // Treat as the last day of that month.
         try {
-
-            val parts =
-                cleaned.split("/")
+            val parts = cleaned.split("/")
 
             if (parts.size == 2) {
-
-                val month =
-                    parts[0].toInt()
-
-                val year =
-                    parts[1].toInt()
+                val month = parts[0].toInt()
+                val year = parts[1].toInt()
 
                 val firstDay =
-                    LocalDate.of(
-                        year,
-                        month,
-                        1
-                    )
+                    LocalDate.of(year, month, 1)
 
                 return firstDay.withDayOfMonth(
                     firstDay.lengthOfMonth()
                 )
             }
-
         } catch (_: Exception) {
         }
 
         // MMM yyyy
         // Treat as the last day of that month.
         try {
-
             val formatter =
                 DateTimeFormatter.ofPattern(
                     "MMM yyyy",

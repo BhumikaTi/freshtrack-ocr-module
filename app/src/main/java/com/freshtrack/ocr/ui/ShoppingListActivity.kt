@@ -1,6 +1,6 @@
-
 package com.freshtrack.ocr.ui
 
+import com.freshtrack.ocr.auth.CurrentUserProvider
 import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.res.ColorStateList
@@ -69,8 +69,7 @@ class ShoppingListActivity : AppCompatActivity() {
             R.id.btnAddShoppingItem
         )
 
-        val root =
-            itemsContainer.parent as? android.widget.ScrollView
+        val root = itemsContainer.parent as? android.widget.ScrollView
         val parent = root?.parent as? LinearLayout
 
         if (parent != null && root != null) {
@@ -211,6 +210,7 @@ class ShoppingListActivity : AppCompatActivity() {
 
             dialog.getButton(AlertDialog.BUTTON_POSITIVE)
                 .setOnClickListener {
+
                     val name = nameInput.text.toString().trim()
                     val quantity = quantityInput.text.toString()
                         .toIntOrNull()
@@ -228,15 +228,23 @@ class ShoppingListActivity : AppCompatActivity() {
 
                     lifecycleScope.launch {
                         try {
+                            val userId = CurrentUserProvider.getUserId()
+                                ?: run {
+                                    showToast("Please log in again")
+                                    return@launch
+                                }
+
                             shoppingDao.insertItem(
                                 ShoppingItem(
                                     itemName = name,
-                                    quantity = quantity
+                                    quantity = quantity,
+                                    userId = userId
                                 )
                             )
 
                             dialog.dismiss()
                             loadItems()
+
                         } catch (exception: Exception) {
                             showToast("Couldn't save item")
                         }
@@ -250,8 +258,12 @@ class ShoppingListActivity : AppCompatActivity() {
     private fun loadItems() {
         lifecycleScope.launch {
             try {
-                allItems = shoppingDao.getAllItems()
+                val userId = CurrentUserProvider.getUserId()
+                    ?: return@launch
+
+                allItems = shoppingDao.getAllItems(userId)
                 displayItems(allItems)
+
             } catch (exception: Exception) {
                 showToast("Couldn't load shopping items")
             }
@@ -387,10 +399,19 @@ class ShoppingListActivity : AppCompatActivity() {
                     )
                     .setNegativeButton("Cancel", null)
                     .setPositiveButton("Delete") { _, _ ->
+
                         lifecycleScope.launch {
                             try {
-                                shoppingDao.deleteItem(item)
+                                val userId = CurrentUserProvider.getUserId()
+                                    ?: return@launch
+
+                                shoppingDao.deleteItemById(
+                                    item.id,
+                                    userId
+                                )
+
                                 loadItems()
+
                             } catch (exception: Exception) {
                                 showToast("Couldn't delete item")
                             }
@@ -401,6 +422,7 @@ class ShoppingListActivity : AppCompatActivity() {
         }
 
         checkbox.setOnCheckedChangeListener { _, checked ->
+
             if (checked == item.isPurchased) {
                 return@setOnCheckedChangeListener
             }
@@ -409,7 +431,13 @@ class ShoppingListActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 try {
-                    val latest = shoppingDao.getItemById(item.id)
+                    val userId = CurrentUserProvider.getUserId()
+                        ?: return@launch
+
+                    val latest = shoppingDao.getItemById(
+                        item.id,
+                        userId
+                    )
 
                     if (latest == null) {
                         showToast("Shopping item no longer exists")
@@ -434,10 +462,12 @@ class ShoppingListActivity : AppCompatActivity() {
                     }
 
                     showExpiryDatePicker(latest, checkbox)
+
                 } catch (exception: Exception) {
                     showToast("Couldn't update item")
                     resetCheckbox(checkbox, item.isPurchased)
                     loadItems()
+
                 } finally {
                     checkbox.isEnabled = true
                 }
@@ -504,7 +534,6 @@ class ShoppingListActivity : AppCompatActivity() {
 
         picker.show()
 
-        // Set button colours after the dialog has been displayed.
         picker.getButton(DatePickerDialog.BUTTON_POSITIVE)
             .setTextColor(getColor(R.color.green_primary))
 
@@ -519,20 +548,28 @@ class ShoppingListActivity : AppCompatActivity() {
     ) {
         lifecycleScope.launch {
             try {
+                val userId = CurrentUserProvider.getUserId()
+                    ?: throw IllegalStateException("Please log in again")
+
                 database.withTransaction {
-                    val latest = shoppingDao.getItemById(item.id)
-                        ?: throw IllegalStateException(
-                            "Shopping item no longer exists"
-                        )
+
+                    val latest = shoppingDao.getItemById(
+                        item.id,
+                        userId
+                    ) ?: throw IllegalStateException(
+                        "Shopping item no longer exists"
+                    )
 
                     if (!latest.inventoryTransferred) {
+
                         productDao.insertProduct(
                             Product(
                                 productName = latest.itemName,
                                 expiryDate = expiryDate,
                                 rawOcrText = "",
                                 category = "Other",
-                                location = ""
+                                location = "",
+                                userId = userId
                             )
                         )
 
@@ -542,6 +579,7 @@ class ShoppingListActivity : AppCompatActivity() {
                                 inventoryTransferred = true
                             )
                         )
+
                     } else {
                         shoppingDao.updateItem(
                             latest.copy(isPurchased = true)
@@ -551,12 +589,14 @@ class ShoppingListActivity : AppCompatActivity() {
 
                 showToast("${item.itemName} added to inventory")
                 loadItems()
+
             } catch (exception: Exception) {
                 resetCheckbox(checkbox, item.isPurchased)
                 showToast(
                     "Couldn't transfer item. Please try again."
                 )
                 loadItems()
+
             } finally {
                 checkbox.isEnabled = true
             }

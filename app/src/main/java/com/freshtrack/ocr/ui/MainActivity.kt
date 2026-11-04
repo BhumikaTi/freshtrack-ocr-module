@@ -1,4 +1,3 @@
-
 package com.freshtrack.ocr.ui
 
 import android.Manifest
@@ -26,12 +25,16 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.freshtrack.ocr.ExpiryNotificationWorker
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.auth.CurrentUserProvider
+import com.freshtrack.ocr.auth.SupabaseAuthRepository
 import com.freshtrack.ocr.data.Product
 import com.freshtrack.ocr.data.ProductDatabase
 import com.freshtrack.ocr.data.ShoppingItem
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
@@ -61,18 +64,19 @@ class MainActivity : AppCompatActivity() {
 
         recentProductsContainer =
             findViewById(R.id.layoutRecentProducts)
+
         recentProductsEmpty =
             findViewById(R.id.tvRecentProductsEmpty)
 
         shoppingPreviewContainer =
             findViewById(R.id.layoutShoppingPreview)
+
         shoppingEmpty =
             findViewById(R.id.tvShoppingListEmpty)
 
         requestNotificationPermission()
         scheduleExpiryNotifications()
 
-        // Scan a product.
         findViewById<MaterialButton>(R.id.btnScanCamera)
             .setOnClickListener {
                 startActivity(
@@ -80,15 +84,6 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
-        // Chat with the AI assistant.
-        findViewById<MaterialButton>(R.id.btnAskAi)
-            .setOnClickListener {
-                startActivity(
-                    Intent(this, ChatActivity::class.java)
-                )
-            }
-
-        // Open the complete product list.
         findViewById<MaterialButton>(R.id.btnMyProducts)
             .setOnClickListener {
                 startActivity(
@@ -96,13 +91,23 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
-        // Open the complete shopping list.
         findViewById<MaterialButton>(R.id.btnViewShoppingList)
             .setOnClickListener {
                 openShoppingList()
             }
 
-        // Add a shopping item directly from the home screen.
+        findViewById<MaterialButton>(R.id.btnAskAi)
+            .setOnClickListener {
+                startActivity(
+                    Intent(this, ChatActivity::class.java)
+                )
+            }
+
+        findViewById<MaterialButton>(R.id.btnLogout)
+            .setOnClickListener {
+                logoutUser()
+            }
+
         findViewById<MaterialButton>(R.id.btnAddShoppingItem)
             .setOnClickListener {
                 showAddShoppingItemDialog()
@@ -118,6 +123,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ---------- LOGOUT ----------
+
+    private fun logoutUser() {
+        lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    SupabaseAuthRepository().logout()
+                }
+
+                val intent = Intent(
+                    this@MainActivity,
+                    LoginActivity::class.java
+                ).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+
+                startActivity(intent)
+                finish()
+
+            } catch (exception: Exception) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Couldn't log out. Please try again.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
     private fun openShoppingList() {
         startActivity(
             Intent(this, ShoppingListActivity::class.java)
@@ -129,10 +164,20 @@ class MainActivity : AppCompatActivity() {
     private fun loadRecentProducts() {
         lifecycleScope.launch {
             try {
+                val userId = CurrentUserProvider.getUserId()
+
+                if (userId.isNullOrBlank()) {
+                    showProductMessage(
+                        "Please log in to view your products."
+                    )
+                    return@launch
+                }
+
                 val products =
-                    database.productDao().getRecentProducts()
+                    database.productDao().getRecentProducts(userId)
 
                 displayRecentProducts(products)
+
             } catch (exception: Exception) {
                 showProductMessage("Couldn't load products.")
             }
@@ -165,7 +210,10 @@ class MainActivity : AppCompatActivity() {
         recentProductsContainer.addView(recentProductsEmpty)
     }
 
-    private fun createProductCard(product: Product): MaterialCardView {
+    private fun createProductCard(
+        product: Product
+    ): MaterialCardView {
+
         val card = MaterialCardView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -213,17 +261,31 @@ class MainActivity : AppCompatActivity() {
     private fun loadShoppingPreview() {
         lifecycleScope.launch {
             try {
+                val userId = CurrentUserProvider.getUserId()
+
+                if (userId.isNullOrBlank()) {
+                    showShoppingMessage(
+                        "Please log in to view your shopping list."
+                    )
+                    return@launch
+                }
+
                 val items =
-                    database.shoppingItemDao().getRecentItems()
+                    database.shoppingItemDao().getRecentItems(userId)
 
                 displayShoppingPreview(items)
+
             } catch (exception: Exception) {
-                showShoppingMessage("Couldn't load shopping items.")
+                showShoppingMessage(
+                    "Couldn't load shopping items."
+                )
             }
         }
     }
 
-    private fun displayShoppingPreview(items: List<ShoppingItem>) {
+    private fun displayShoppingPreview(
+        items: List<ShoppingItem>
+    ) {
         shoppingPreviewContainer.removeAllViews()
 
         if (items.isEmpty()) {
@@ -250,6 +312,7 @@ class MainActivity : AppCompatActivity() {
     private fun createShoppingPreviewCard(
         item: ShoppingItem
     ): MaterialCardView {
+
         val card = MaterialCardView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -324,12 +387,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         card.addView(row)
+
         return card
     }
 
-    // ---------- ADD ITEM DIRECTLY FROM HOME ----------
+    // ---------- ADD SHOPPING ITEM ----------
 
     private fun showAddShoppingItemDialog() {
+
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(24), dp(8), dp(24), dp(8))
@@ -379,6 +444,7 @@ class MainActivity : AppCompatActivity() {
             .create()
 
         dialog.setOnShowListener {
+
             dialog.window?.setBackgroundDrawableResource(
                 android.R.color.white
             )
@@ -391,7 +457,9 @@ class MainActivity : AppCompatActivity() {
 
             dialog.getButton(AlertDialog.BUTTON_POSITIVE)
                 .setOnClickListener {
+
                     val name = nameInput.text.toString().trim()
+
                     val quantity =
                         quantityInput.text.toString().toIntOrNull()
 
@@ -408,10 +476,23 @@ class MainActivity : AppCompatActivity() {
 
                     lifecycleScope.launch {
                         try {
+                            val userId =
+                                CurrentUserProvider.getUserId()
+
+                            if (userId.isNullOrBlank()) {
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Please log in again.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@launch
+                            }
+
                             database.shoppingItemDao().insertItem(
                                 ShoppingItem(
                                     itemName = name,
-                                    quantity = quantity
+                                    quantity = quantity,
+                                    userId = userId
                                 )
                             )
 
@@ -423,6 +504,7 @@ class MainActivity : AppCompatActivity() {
                                 "Shopping item added",
                                 Toast.LENGTH_SHORT
                             ).show()
+
                         } catch (exception: Exception) {
                             Toast.makeText(
                                 this@MainActivity,
@@ -437,13 +519,14 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // ---------- HELPERS AND NOTIFICATIONS ----------
+    // ---------- NOTIFICATIONS ----------
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+
             if (
                 ContextCompat.checkSelfPermission(
                     this,

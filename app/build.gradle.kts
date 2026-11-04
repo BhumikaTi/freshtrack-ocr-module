@@ -4,18 +4,27 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("org.jetbrains.kotlin.kapt")
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
 }
 
 android {
     namespace = "com.freshtrack.ocr"
     compileSdk = 36
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         val localProps = Properties()
         val localFile = rootProject.file("local.properties")
+
         if (localFile.exists()) {
-            localFile.inputStream().use { localProps.load(it) }
+            localFile.inputStream().use {
+                localProps.load(it)
+            }
         }
+
         buildConfigField(
             "String",
             "GEMINI_API_KEY",
@@ -34,15 +43,26 @@ android {
             "GEMINI_USE_SEARCH",
             localProps.getProperty("GEMINI_USE_SEARCH", "false")
         )
+
+        buildConfigField(
+            "String",
+            "SUPABASE_URL",
+            "\"${localProps.getProperty("SUPABASE_URL", "")}\""
+        )
+
+        buildConfigField(
+            "String",
+            "SUPABASE_PUBLISHABLE_KEY",
+            "\"${localProps.getProperty("SUPABASE_PUBLISHABLE_KEY", "")}\""
+        )
+
         applicationId = "com.freshtrack.ocr"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-    buildFeatures {
-        buildConfig = true
     }
 
     buildTypes {
@@ -61,7 +81,6 @@ android {
 }
 
 dependencies {
-
     // AndroidX
     implementation(libs.androidx.core.ktx)
     implementation(libs.core.ktx)
@@ -87,9 +106,10 @@ dependencies {
     implementation("com.google.mlkit:text-recognition:16.0.1")
 
     // Room Database
-    implementation("androidx.room:room-runtime:2.7.2")
-    implementation("androidx.room:room-ktx:2.7.2")
-    kapt("androidx.room:room-compiler:2.7.2")
+    implementation("androidx.room:room-runtime:2.8.5")
+    implementation("androidx.room:room-ktx:2.8.5")
+    kapt("androidx.room:room-compiler:2.8.5")
+
 
     // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.10.1")
@@ -99,21 +119,34 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
+    // Barcode scanning
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
-    // Networking: calling the Open Food Facts API
+    // Networking: Open Food Facts API
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
 
-    // Coroutines, for the suspend fun in ProductRepository
+    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-    // lifecycleScope, used in ProductResultActivity
+    // Lifecycle
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4") // ChatViewModel
+
+    // Logging
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
-    implementation("io.coil-kt:coil:2.7.0")                  // loads product photos
-    implementation("androidx.recyclerview:recyclerview:1.3.2") // the Your Products list
+    // Coil: product photos
+    implementation("io.coil-kt:coil:2.7.0")
 
+    // RecyclerView
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+    // Supabase Auth
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.0.3"))
+    implementation("io.github.jan-tennert.supabase:auth-kt")
+
+    // Ktor Android client
+    implementation("io.ktor:ktor-client-android:3.0.3")
 }
