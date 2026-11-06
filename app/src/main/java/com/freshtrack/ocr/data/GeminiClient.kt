@@ -1,3 +1,4 @@
+
 package com.freshtrack.ocr.data
 
 import com.freshtrack.ocr.BuildConfig
@@ -13,14 +14,13 @@ import java.util.concurrent.TimeUnit
 
 interface GeminiService {
 
-    // POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent
     @POST("v1beta/models/{model}:generateContent")
     suspend fun generate(
         @Path("model") model: String,
         @Body request: GeminiRequest
     ): retrofit2.Response<GeminiResponse>
 
-    // Same endpoint, used by the chatbot (system prompt + multi-turn history, no search tool).
+    // Used by the chatbot (system prompt + multi-turn history).
     @POST("v1beta/models/{model}:generateContent")
     suspend fun chat(
         @Path("model") model: String,
@@ -28,24 +28,27 @@ interface GeminiService {
     ): retrofit2.Response<GeminiResponse>
 }
 
+private class ApiKeyInterceptor(
+    private val apiKey: String
+) : Interceptor {
 
-private class ApiKeyInterceptor(private val apiKey: String) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        val request = chain.request().newBuilder()
+        val request = chain.request()
+            .newBuilder()
             .header("x-goog-api-key", apiKey)
             .build()
+
         return chain.proceed(request)
     }
 }
 
 object GeminiClient {
 
-
-    private val okHttpClient by lazy {
+    private val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .addInterceptor(ApiKeyInterceptor(BuildConfig.GEMINI_API_KEY))
             .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS) // a Google Search lookup can take a while
+            .readTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 
