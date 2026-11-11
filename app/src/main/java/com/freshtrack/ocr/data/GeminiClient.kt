@@ -20,6 +20,13 @@ interface GeminiService {
         @Body request: GeminiRequest
     ): retrofit2.Response<GeminiResponse>
 
+    // Used to read a printed date from a photo when on-device OCR fails.
+    @POST("v1beta/models/{model}:generateContent")
+    suspend fun vision(
+        @Path("model") model: String,
+        @Body request: VisionRequest
+    ): retrofit2.Response<GeminiResponse>
+
     // Used by the chatbot (system prompt + multi-turn history).
     @POST("v1beta/models/{model}:generateContent")
     suspend fun chat(

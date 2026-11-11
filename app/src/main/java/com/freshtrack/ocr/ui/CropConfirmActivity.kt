@@ -14,16 +14,22 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.freshtrack.ocr.ExpiryParser
 import com.freshtrack.ocr.ImagePreprocessor
 import com.freshtrack.ocr.OcrResultListener
 import com.freshtrack.ocr.OcrSource
 import com.freshtrack.ocr.OcrTextExtractor
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.data.GeminiVisionDateReader
+import com.freshtrack.ocr.data.VisionDateResult
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
 
@@ -86,6 +92,12 @@ class CropConfirmActivity :
 
     private var sourceBitmap:
             Bitmap? = null
+
+    // Photo kept for the AI fallback when OCR + parser find no date.
+    private var visionBitmap: Bitmap? = null
+    private var visionTried = false
+    private var visionJob: Job? = null
+    private var visionDialog: AlertDialog? = null
 
     private var source:
             OcrSource =
@@ -203,11 +215,7 @@ class CropConfirmActivity :
         setupZoomGesture()
     }
 
-    /*
-     * ------------------------------------------------------
-     * LOAD IMAGE
-     * ------------------------------------------------------
-     */
+
 
     private fun loadSourceImage() {
 
@@ -337,11 +345,6 @@ class CropConfirmActivity :
         }
     }
 
-    /*
-     * ------------------------------------------------------
-     * INITIAL IMAGE FIT
-     * ------------------------------------------------------
-     */
 
     private fun setupInitialImage() {
 
@@ -405,11 +408,7 @@ class CropConfirmActivity :
             1f
     }
 
-    /*
-     * ------------------------------------------------------
-     * BUTTONS
-     * ------------------------------------------------------
-     */
+
 
     private fun setupButtons() {
 
@@ -432,11 +431,7 @@ class CropConfirmActivity :
         }
     }
 
-    /*
-     * ------------------------------------------------------
-     * CROP MODE
-     * ------------------------------------------------------
-     */
+
 
     private fun cancelCropMode() {
         cropModeActive = false
@@ -488,11 +483,7 @@ class CropConfirmActivity :
         btnCrop.text = "CANCEL CROP"
     }
 
-    /*
-     * ------------------------------------------------------
-     * START OCR (with the "no answer" safety net)
-     * ------------------------------------------------------
-     */
+
 
     private fun startOcr(bitmap: Bitmap) {
 
@@ -510,11 +501,7 @@ class CropConfirmActivity :
         )
     }
 
-    /*
-     * ------------------------------------------------------
-     * CONFIRM SCAN
-     * ------------------------------------------------------
-     */
+
 
     private fun confirmScan() {
 
@@ -536,6 +523,9 @@ class CropConfirmActivity :
                 TAG,
                 "CONFIRM: full-image OCR"
             )
+
+            visionBitmap = bitmap
+            visionTried = false
 
             val enhancedFull =
                 ImagePreprocessor.enhanceForOcr(
@@ -599,6 +589,9 @@ class CropConfirmActivity :
         )
 
 
+        visionBitmap = croppedBitmap
+        visionTried = false
+
         val enhancedBitmap =
             ImagePreprocessor.enhanceForOcr(
                 croppedBitmap
@@ -607,11 +600,7 @@ class CropConfirmActivity :
         startOcr(enhancedBitmap)
     }
 
-    /*
-     * ------------------------------------------------------
-     * VIEW RECT -> BITMAP RECT
-     * ------------------------------------------------------
-     */
+
 
     private fun viewRectToBitmapRect(
         viewRect: RectF
@@ -771,11 +760,7 @@ class CropConfirmActivity :
         )
     }
 
-    /*
-     * ------------------------------------------------------
-     * ROTATION
-     * ------------------------------------------------------
-     */
+
 
     private fun rotateImage() {
 
@@ -804,11 +789,7 @@ class CropConfirmActivity :
         )
     }
 
-    /*
-     * ------------------------------------------------------
-     * ZOOM / PAN
-     * ------------------------------------------------------
-     */
+
 
     private fun setupZoomGesture() {
 
@@ -938,11 +919,7 @@ class CropConfirmActivity :
         }
     }
 
-    /*
-     * ------------------------------------------------------
-     * OCR CALLBACK
-     * ------------------------------------------------------
-     */
+
 
     override fun onTextExtracted(
         rawText: String,
@@ -1012,7 +989,21 @@ class CropConfirmActivity :
 
             runOnUiThread {
 
-                showExpiryNotFoundDialog()
+                val image = visionBitmap
+
+                if (image != null && !visionTried) {
+
+                    // On-device OCR could not read a date: ask Gemini to read the photo.
+                    visionTried = true
+                    readDateWithAi(
+                        image,
+                        parsed.productName ?: ""
+                    )
+
+                } else {
+
+                    showExpiryNotFoundDialog()
+                }
             }
 
             return
@@ -1024,47 +1015,117 @@ class CropConfirmActivity :
         )
 
         runOnUiThread {
-
-            // Opened from the Add Product screen: send the date back.
-            if (returnDateOnly) {
-
-                setResult(
-                    RESULT_OK,
-                    Intent().putExtra(
-                        EXTRA_EXPIRY_DATE_RESULT,
-                        expiryDate
-                    )
-                )
-
-                finish()
-
-                return@runOnUiThread
-            }
-            val intent = Intent(
-                this,
-                AddProductActivity::class.java
-            )
-
-            intent.putExtra(
-                "productName",
-                parsed.productName ?: ""
-            )
-
-            intent.putExtra(
-                "expiryDate",
+            deliverExpiry(
+                parsed.productName ?: "",
                 expiryDate
             )
-
-            startActivity(intent)
-            finish()
         }
     }
 
-    /*
-     * ------------------------------------------------------
-     * OCR REGION CALLBACK
-     * ------------------------------------------------------
-     */
+
+
+    private fun deliverExpiry(
+        productName: String,
+        expiryDate: String
+    ) {
+
+        // Opened from the Add Product screen: send the date back.
+        if (returnDateOnly) {
+
+            setResult(
+                RESULT_OK,
+                Intent().putExtra(
+                    EXTRA_EXPIRY_DATE_RESULT,
+                    expiryDate
+                )
+            )
+
+            finish()
+
+            return
+        }
+
+        val intent = Intent(
+            this,
+            AddProductActivity::class.java
+        )
+
+        intent.putExtra(
+            "productName",
+            productName
+        )
+
+        intent.putExtra(
+            "expiryDate",
+            expiryDate
+        )
+
+        startActivity(intent)
+        finish()
+    }
+
+
+
+    private fun readDateWithAi(
+        image: Bitmap,
+        productName: String
+    ) {
+
+        visionDialog = MaterialAlertDialogBuilder(this)
+            .setTitle("Reading the date with AI")
+            .setMessage(
+                "The scan could not read a date, so the photo is being sent to " +
+                        "Google Gemini to read it. This needs internet and can take a few seconds."
+            )
+            .setCancelable(false)
+            .setNegativeButton("CANCEL") { _, _ ->
+                visionJob?.cancel()
+                showExpiryNotFoundDialog()
+            }
+            .show()
+
+        visionJob = lifecycleScope.launch {
+
+            val result =
+                GeminiVisionDateReader.read(image)
+
+            visionDialog?.dismiss()
+
+            when (result) {
+
+                is VisionDateResult.Found -> {
+
+                    Log.d(
+                        TAG,
+                        "AI fallback found: ${result.date.format()} from: ${result.text}"
+                    )
+
+                    Toast.makeText(
+                        this@CropConfirmActivity,
+                        "Date read by AI. Please check it before saving.",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    deliverExpiry(
+                        productName,
+                        result.date.format()
+                    )
+                }
+
+                is VisionDateResult.NotFound -> {
+
+                    Log.d(
+                        TAG,
+                        "AI fallback found nothing: ${result.reason}"
+                    )
+
+                    showExpiryNotFoundDialog()
+                }
+            }
+        }
+    }
+
+
 
     override fun onTextRegionsDetected(
         regions:
@@ -1091,11 +1152,6 @@ class CropConfirmActivity :
         }
     }
 
-    /*
-     * ------------------------------------------------------
-     * EXPIRY NOT FOUND
-     * ------------------------------------------------------
-     */
 
     private fun showExpiryNotFoundDialog() {
 
@@ -1139,15 +1195,14 @@ class CropConfirmActivity :
             .show()
     }
 
-    /*
-     * ------------------------------------------------------
-     * CLEANUP
-     * ------------------------------------------------------
-     */
+
+
 
     override fun onDestroy() {
 
         uiHandler.removeCallbacks(noReplyRunnable)
+
+        visionDialog?.dismiss()
 
         ocrTextExtractor.close()
 

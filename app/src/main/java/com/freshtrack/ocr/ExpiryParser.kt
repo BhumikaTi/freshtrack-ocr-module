@@ -25,32 +25,30 @@ object ExpiryParser {
         text: String
     ): ParsedProduct {
 
-        val expiryDate =
-            extractExpiryDate(text)
+        val result =
+            ExpiryDateParser.extract(text)
 
         val productName =
             extractProductName(text)
 
-        val confidence =
-            when {
-                expiryDate == null ->
-                    Confidence.LOW
-
-                hasStrongExpiryLabel(text) ->
-                    Confidence.HIGH
-
-                else ->
-                    Confidence.MEDIUM
-            }
-
         return ParsedProduct(
             productName = productName,
-            expiryDate = expiryDate,
-            confidence = confidence
+            expiryDate = result?.format(),
+            confidence = result?.confidence ?: Confidence.LOW
         )
     }
 
+    /**
+     * Returns the expiry date as "dd/MM/yyyy" or "MM/yyyy" (always a 4-digit year), or null.
+     * The reading logic lives in [ExpiryDateParser].
+     */
     fun extractExpiryDate(
+        text: String
+    ): String? =
+        ExpiryDateParser.extract(text)?.format()
+
+    @Suppress("unused")
+    private fun legacyExtractExpiryDate(
         text: String
     ): String? {
 
