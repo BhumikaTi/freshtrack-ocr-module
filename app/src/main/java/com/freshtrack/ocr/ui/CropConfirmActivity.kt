@@ -98,6 +98,13 @@ class CropConfirmActivity :
     private var visionTried = false
     private var visionJob: Job? = null
     private var visionDialog: AlertDialog? = null
+    private var consentDialog: AlertDialog? = null
+
+    // The photo prepared for on-device OCR, kept so it can run if the AI step does not work.
+    private var pendingEnhanced: Bitmap? = null
+
+    // True when the date came from on-device OCR, which is much less accurate than the AI.
+    private var usedOfflineOcr = false
 
     private var source:
             OcrSource =
@@ -215,7 +222,11 @@ class CropConfirmActivity :
         setupZoomGesture()
     }
 
-
+    /*
+     * ------------------------------------------------------
+     * LOAD IMAGE
+     * ------------------------------------------------------
+     */
 
     private fun loadSourceImage() {
 
@@ -345,6 +356,11 @@ class CropConfirmActivity :
         }
     }
 
+    /*
+     * ------------------------------------------------------
+     * INITIAL IMAGE FIT
+     * ------------------------------------------------------
+     */
 
     private fun setupInitialImage() {
 
@@ -408,7 +424,11 @@ class CropConfirmActivity :
             1f
     }
 
-
+    /*
+     * ------------------------------------------------------
+     * BUTTONS
+     * ------------------------------------------------------
+     */
 
     private fun setupButtons() {
 
@@ -431,7 +451,11 @@ class CropConfirmActivity :
         }
     }
 
-
+    /*
+     * ------------------------------------------------------
+     * CROP MODE
+     * ------------------------------------------------------
+     */
 
     private fun cancelCropMode() {
         cropModeActive = false
@@ -483,7 +507,11 @@ class CropConfirmActivity :
         btnCrop.text = "CANCEL CROP"
     }
 
-
+    /*
+     * ------------------------------------------------------
+     * START OCR (with the "no answer" safety net)
+     * ------------------------------------------------------
+     */
 
     private fun startOcr(bitmap: Bitmap) {
 
@@ -501,7 +529,11 @@ class CropConfirmActivity :
         )
     }
 
-
+    /*
+     * ------------------------------------------------------
+     * CONFIRM SCAN
+     * ------------------------------------------------------
+     */
 
     private fun confirmScan() {
 
@@ -524,15 +556,12 @@ class CropConfirmActivity :
                 "CONFIRM: full-image OCR"
             )
 
-            visionBitmap = bitmap
-            visionTried = false
-
             val enhancedFull =
                 ImagePreprocessor.enhanceForOcr(
                     bitmap
                 )
 
-            startOcr(enhancedFull)
+            scanImage(bitmap, enhancedFull)
 
             return
         }
@@ -589,18 +618,89 @@ class CropConfirmActivity :
         )
 
 
-        visionBitmap = croppedBitmap
-        visionTried = false
-
         val enhancedBitmap =
             ImagePreprocessor.enhanceForOcr(
                 croppedBitmap
             )
 
-        startOcr(enhancedBitmap)
+        scanImage(croppedBitmap, enhancedBitmap)
     }
 
+    /*
+     * ------------------------------------------------------
+     * CHOOSE HOW TO SCAN
+     *
+     * Online and allowed -> Gemini vision first.
+     * Offline, not allowed, or the AI did not work -> on-device
+     * OCR, which is less accurate, so the user is warned.
+     * ------------------------------------------------------
+     */
 
+    private fun scanImage(
+        photo: Bitmap,
+        enhanced: Bitmap
+    ) {
+
+        visionBitmap = photo
+        visionTried = false
+        pendingEnhanced = enhanced
+        usedOfflineOcr = false
+
+        if (!AiScanSettings.isOnline(this)) {
+
+            Log.d(TAG, "SCAN: no internet, using offline OCR")
+            runOfflineOcr(enhanced)
+            return
+        }
+
+        if (!AiScanSettings.hasAnswered(this)) {
+
+            consentDialog = AiScanSettings.showConsentDialog(this) { allowed ->
+                if (allowed) {
+                    visionTried = true
+                    readDateWithAi(photo)
+                } else {
+                    runOfflineOcr(enhanced)
+                }
+            }
+            return
+        }
+
+        if (AiScanSettings.isAllowed(this)) {
+
+            visionTried = true
+            readDateWithAi(photo)
+
+        } else {
+
+            Log.d(TAG, "SCAN: AI not allowed by the user, using offline OCR")
+            runOfflineOcr(enhanced)
+        }
+    }
+
+    private fun runOfflineOcr(enhanced: Bitmap) {
+
+        usedOfflineOcr = true
+        startOcr(enhanced)
+    }
+
+    /** The AI could not give a date, so try on-device OCR as the last resort. */
+    private fun fallBackToOfflineOcr() {
+
+        val enhanced = pendingEnhanced
+
+        if (enhanced != null) {
+            runOfflineOcr(enhanced)
+        } else {
+            showExpiryNotFoundDialog()
+        }
+    }
+
+    /*
+     * ------------------------------------------------------
+     * VIEW RECT -> BITMAP RECT
+     * ------------------------------------------------------
+     */
 
     private fun viewRectToBitmapRect(
         viewRect: RectF
@@ -760,7 +860,11 @@ class CropConfirmActivity :
         )
     }
 
-
+    /*
+     * ------------------------------------------------------
+     * ROTATION
+     * ------------------------------------------------------
+     */
 
     private fun rotateImage() {
 
@@ -789,7 +893,11 @@ class CropConfirmActivity :
         )
     }
 
-
+    /*
+     * ------------------------------------------------------
+     * ZOOM / PAN
+     * ------------------------------------------------------
+     */
 
     private fun setupZoomGesture() {
 
@@ -919,7 +1027,11 @@ class CropConfirmActivity :
         }
     }
 
-
+    /*
+     * ------------------------------------------------------
+     * OCR CALLBACK
+     * ------------------------------------------------------
+     */
 
     override fun onTextExtracted(
         rawText: String,
@@ -987,23 +1099,9 @@ class CropConfirmActivity :
                 "Parser returned NO expiry date"
             )
 
+            // On-device OCR is the last resort now, so there is nothing left to try.
             runOnUiThread {
-
-                val image = visionBitmap
-
-                if (image != null && !visionTried) {
-
-                    // On-device OCR could not read a date: ask Gemini to read the photo.
-                    visionTried = true
-                    readDateWithAi(
-                        image,
-                        parsed.productName ?: ""
-                    )
-
-                } else {
-
-                    showExpiryNotFoundDialog()
-                }
+                showExpiryNotFoundDialog()
             }
 
             return
@@ -1015,6 +1113,15 @@ class CropConfirmActivity :
         )
 
         runOnUiThread {
+
+            if (usedOfflineOcr) {
+                Toast.makeText(
+                    this,
+                    "Read offline, so it may be wrong. Please check the date before saving.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+
             deliverExpiry(
                 parsed.productName ?: "",
                 expiryDate
@@ -1022,7 +1129,11 @@ class CropConfirmActivity :
         }
     }
 
-
+    /*
+     * ------------------------------------------------------
+     * SEND THE DATE ON (from OCR or from the AI fallback)
+     * ------------------------------------------------------
+     */
 
     private fun deliverExpiry(
         productName: String,
@@ -1064,23 +1175,27 @@ class CropConfirmActivity :
         finish()
     }
 
-
+    /*
+     * ------------------------------------------------------
+     * AI FALLBACK (needs internet)
+     * ------------------------------------------------------
+     */
 
     private fun readDateWithAi(
         image: Bitmap,
-        productName: String
+        productName: String = ""
     ) {
 
         visionDialog = MaterialAlertDialogBuilder(this)
             .setTitle("Reading the date with AI")
             .setMessage(
-                "The scan could not read a date, so the photo is being sent to " +
-                        "Google Gemini to read it. This needs internet and can take a few seconds."
+                "Your photo is being sent to Google Gemini to read the date. " +
+                        "This can take a few seconds."
             )
             .setCancelable(false)
-            .setNegativeButton("CANCEL") { _, _ ->
+            .setNegativeButton("USE OFFLINE") { _, _ ->
                 visionJob?.cancel()
-                showExpiryNotFoundDialog()
+                fallBackToOfflineOcr()
             }
             .show()
 
@@ -1116,16 +1231,20 @@ class CropConfirmActivity :
 
                     Log.d(
                         TAG,
-                        "AI fallback found nothing: ${result.reason}"
+                        "AI found nothing (${result.reason}), trying offline OCR"
                     )
 
-                    showExpiryNotFoundDialog()
+                    fallBackToOfflineOcr()
                 }
             }
         }
     }
 
-
+    /*
+     * ------------------------------------------------------
+     * OCR REGION CALLBACK
+     * ------------------------------------------------------
+     */
 
     override fun onTextRegionsDetected(
         regions:
@@ -1152,6 +1271,11 @@ class CropConfirmActivity :
         }
     }
 
+    /*
+     * ------------------------------------------------------
+     * EXPIRY NOT FOUND
+     * ------------------------------------------------------
+     */
 
     private fun showExpiryNotFoundDialog() {
 
@@ -1195,14 +1319,18 @@ class CropConfirmActivity :
             .show()
     }
 
-
-
+    /*
+     * ------------------------------------------------------
+     * CLEANUP
+     * ------------------------------------------------------
+     */
 
     override fun onDestroy() {
 
         uiHandler.removeCallbacks(noReplyRunnable)
 
         visionDialog?.dismiss()
+        consentDialog?.dismiss()
 
         ocrTextExtractor.close()
 

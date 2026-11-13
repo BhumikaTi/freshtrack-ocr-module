@@ -4,15 +4,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Locale
 
-/**
- * Result of reading an expiry date from OCR text.
- *
- * [day] is null when the label only shows month and year (for example "11/2026").
- * [format] always gives the same two formats, with a 4-digit year, so every screen
- * and the notification worker can read the value the same way:
- *   - "dd/MM/yyyy"  when the day is known
- *   - "MM/yyyy"     when only month and year are known
- */
+
 data class ExpiryDateResult(
     val year: Int,
     val month: Int,
@@ -68,9 +60,7 @@ object ExpiryDateParser {
         var candidates: List<Cand>
     )
 
-    // ------------------------------------------------------------------
-    // Vocabulary
-    // ------------------------------------------------------------------
+
 
     private val FULL_MONTHS = listOf(
         "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
@@ -79,7 +69,7 @@ object ExpiryDateParser {
 
     private val SHORT_MONTHS = FULL_MONTHS.map { it.take(3) }
 
-    /** Two letters are enough to know the month, except MA (MAR/MAY) and JU (JUN/JUL). */
+
     private val TWO_LETTER_MONTHS = mapOf(
         "JA" to 1, "FE" to 2, "AP" to 4, "AU" to 8,
         "SE" to 9, "OC" to 10, "NO" to 11, "DE" to 12
@@ -122,9 +112,6 @@ object ExpiryDateParser {
         """(\d{1,3})\s*(M[O0]NTHS?|MTHS?|MNTHS?|MOS|YEARS?|YRS?|DAYS?|WEEKS?)"""
     )
 
-    // ------------------------------------------------------------------
-    // Public entry point
-    // ------------------------------------------------------------------
 
     fun extract(text: String): ExpiryDateResult? {
         val cleaned = clean(text)
@@ -156,14 +143,18 @@ object ExpiryDateParser {
         val manufactureDates = all.filter { it.label == Label.MANUFACTURE }
         val unlabelled = all.filter { it.label == null }
 
-        // 1. A date that is labelled as the expiry date.
+
+        val everyDate = (expiryDates + manufactureDates + unlabelled).distinctBy { it.key }
+        if (everyDate.size >= 2) {
+            everyDate.maxByOrNull { it.key }?.let {
+                val conf = if (it.label == Label.EXPIRY) Confidence.HIGH else Confidence.MEDIUM
+                return ExpiryDateResult(it.year, it.month, it.day, conf)
+            }
+        }
+
+        // 1. Only one date: use it if it is labelled as the expiry date.
         expiryDates.firstOrNull()?.let { exp ->
-            val mfg = manufactureDates.firstOrNull()
-            val sane = mfg == null || exp.key >= mfg.key
-            return ExpiryDateResult(
-                exp.year, exp.month, exp.day,
-                if (sane) Confidence.HIGH else Confidence.MEDIUM
-            )
+            return ExpiryDateResult(exp.year, exp.month, exp.day, Confidence.HIGH)
         }
 
         // 2. "12 months from manufacture", "shelf life 9 months", "use within 24 months".
@@ -174,13 +165,11 @@ object ExpiryDateParser {
             return ExpiryDateResult(it.year, it.month, it.day, Confidence.MEDIUM)
         }
 
-        // Only manufacture dates, or nothing usable.
+        // Only one manufacture date, or nothing usable.
         return null
     }
 
-    // ------------------------------------------------------------------
-    // Cleaning and tokenizing
-    // ------------------------------------------------------------------
+
 
     private fun clean(text: String): String {
         val sb = StringBuilder(text.length)
@@ -195,7 +184,30 @@ object ExpiryDateParser {
                 else -> sb.append(ch)
             }
         }
-        return sb.toString().uppercase(Locale.ROOT)
+        return repairDropped(sb.toString().uppercase(Locale.ROOT))
+    }
+
+
+    private val MISSING_SECOND_SEP = Regex("(?<![0-9])(\\d{2})(\\d{2})([/.\\-])(\\d{2}|\\d{4})(?![0-9])")
+    private val MISSING_FIRST_SEP = Regex("(?<![0-9])(\\d{2})([/.\\-])(\\d{2})(\\d{2})(?![0-9])")
+
+    private fun repairDropped(text: String): String {
+        var out = MISSING_SECOND_SEP.replace(text) { m ->
+            val day = m.groupValues[1].toInt()
+            val month = m.groupValues[2].toInt()
+            if (day in 1..31 && month in 1..12) {
+                "${m.groupValues[1]}/${m.groupValues[2]}/${m.groupValues[4]}"
+            } else m.value
+        }
+        out = MISSING_FIRST_SEP.replace(out) { m ->
+            val month = m.groupValues[3].toInt()
+            val day = m.groupValues[1].toInt()
+            val fourDigits = (m.groupValues[3] + m.groupValues[4]).toInt()
+            if (day in 1..31 && month in 1..12 && fourDigits !in 2015..2060) {
+                "${m.groupValues[1]}/${m.groupValues[3]}/${m.groupValues[4]}"
+            } else m.value
+        }
+        return out
     }
 
     private fun tokenize(line: String): List<Tok> {
@@ -222,7 +234,7 @@ object ExpiryDateParser {
         return Tok(Kind.WORD, run, sep, prefixMonth = TWO_LETTER_MONTHS[run] ?: 0)
     }
 
-    /** "12", "1O" (OCR letter O), "2O26" -> numbers. Words never become numbers. */
+
     private fun numberValue(run: String): Int? {
         if (run.length > 8) return null
         var real = 0
@@ -242,11 +254,7 @@ object ExpiryDateParser {
         return sb.toString().toIntOrNull()
     }
 
-    // ------------------------------------------------------------------
-    // Month names (short, full, and OCR mistakes)
-    // ------------------------------------------------------------------
 
-    /** Returns the month (1..12) and whether the match was exact. */
     private fun monthOf(run: String): Pair<Int, Boolean>? {
         if (run.length < 3 || run.length > 10) return null
         val variants = letterVariants(run)
@@ -261,7 +269,7 @@ object ExpiryDateParser {
         return null
     }
 
-    /** Replaces look-alike digits by letters: N0V -> NOV, 5EP -> SEP, AU6 -> AUG. */
+
     private fun letterVariants(run: String): List<String> {
         if (run.count { it.isDigit() } > 2) return emptyList()
         var results = listOf("")
@@ -319,9 +327,7 @@ object ExpiryDateParser {
         return dp[a.length][b.length]
     }
 
-    // ------------------------------------------------------------------
-    // Labels
-    // ------------------------------------------------------------------
+
 
     private fun labelAt(tokens: List<Tok>, i: Int): Label? {
         val t = tokens[i]
@@ -350,7 +356,7 @@ object ExpiryDateParser {
     private fun findLabels(tokens: List<Tok>): List<Pair<Int, Label>> =
         tokens.indices.mapNotNull { i -> labelAt(tokens, i)?.let { Pair(i, it) } }
 
-    /** "EXP NO 8 2026": the word NO is read as NOV only right after a label. */
+
     private fun applyPrefixMonths(tokens: List<Tok>): List<Tok> =
         tokens.mapIndexed { i, t ->
             if (t.kind == Kind.WORD && t.prefixMonth > 0 && labelJustBefore(tokens, i)) {
@@ -532,9 +538,7 @@ object ExpiryDateParser {
         return null
     }
 
-    // ------------------------------------------------------------------
-    // Shelf life: "12 months from manufacture"
-    // ------------------------------------------------------------------
+
 
     private fun shelfLifeExpiry(
         cleaned: String,

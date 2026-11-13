@@ -31,7 +31,7 @@ object GeminiVisionDateReader {
     private const val MAX_SIDE = 1280
 
     // Whole attempt (all retries) must finish in this time, so the dialog never hangs.
-    private const val TOTAL_TIMEOUT_MS = 30_000L
+    private const val TOTAL_TIMEOUT_MS = 12_000L
     private const val BACKUP_MODEL = "gemini-3.5-flash-lite"
     private val RETRYABLE = setOf(429, 500, 502, 503, 504)
 
@@ -55,10 +55,7 @@ object GeminiVisionDateReader {
         }
         withTimeoutOrNull(TOTAL_TIMEOUT_MS) {
             readOnce(bitmap, service)
-        } ?: run {
-            Log.w(TAG, "timed out after ${TOTAL_TIMEOUT_MS / 1000}s with no answer")
-            VisionDateResult.NotFound("AI took too long")
-        }
+        } ?: VisionDateResult.NotFound("AI took too long")
     }
 
     private suspend fun readOnce(
