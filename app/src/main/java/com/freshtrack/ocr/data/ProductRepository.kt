@@ -77,7 +77,7 @@ class ProductRepository(
                 ProductLookupResult.Error("No internet connection. Check your network and try again.")
             } catch (e: Exception) {
                 Log.e(TAG, "lookup($barcode) unexpected failure", e)
-                ProductLookupResult.Error(e.message ?: "Unknown error looking up this product")
+                ProductLookupResult.Error("Something went wrong looking up this product. Please try again.")
             }
         }
 

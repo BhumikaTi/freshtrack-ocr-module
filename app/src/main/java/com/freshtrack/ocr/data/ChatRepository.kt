@@ -2,6 +2,7 @@ package com.freshtrack.ocr.data
 
 import android.util.Log
 import com.freshtrack.ocr.BuildConfig
+import com.freshtrack.ocr.UseFirstSelector
 import com.freshtrack.ocr.auth.CurrentUserProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -149,7 +150,7 @@ class ChatRepository(
                             "- ${product.productName.oneLine()} | " +
                                     "${product.category.oneLine()} " +
                                     "| expires: ${product.expiryDate.oneLine()}"
-                        }
+                        } + useFirstSection(products)
                     }
                 }
             }
@@ -177,6 +178,10 @@ class ChatRepository(
             - Do not invent expiry dates. If something is not in the list below, say you
               don't know.
 
+            When the user asks what to cook, eat or use first, use the "USE FIRST" list below
+            (it is already sorted by expiry) and prefer the items at the top. Never suggest
+            anything from the "ALREADY EXPIRED" list. If there is no food in the list, say so.
+
             The user's saved products follow. Dates are exactly as the user typed or scanned
             them and the formats vary. Read "06/28" as June 2028, "SEP 26" as September 2026,
             and a date with only a month and year as the last day of that month.
@@ -187,6 +192,39 @@ class ChatRepository(
                 GeminiPart("$prompt\n\n$pantry")
             )
         )
+    }
+
+    /**
+     * A short, already-sorted summary so the model does not have to work out dates itself:
+     * the food to use first, and anything that has already expired.
+     */
+    private fun useFirstSection(products: List<Product>): String {
+
+        val result = UseFirstSelector.select(products)
+        val out = StringBuilder()
+
+        if (result.useFirst.isNotEmpty()) {
+            out.append("\n\nUSE FIRST (food that is still good, soonest expiry first):")
+            result.useFirst.take(MAX_USE_FIRST).forEach { item ->
+                out.append("\n- ${item.product.productName.oneLine()} | ")
+                out.append(
+                    when (item.daysLeft) {
+                        0 -> "expires today"
+                        1 -> "expires tomorrow"
+                        else -> "expires in ${item.daysLeft} days"
+                    }
+                )
+            }
+        }
+
+        if (result.expired.isNotEmpty()) {
+            out.append("\n\nALREADY EXPIRED (never suggest eating or using these):")
+            result.expired.take(MAX_USE_FIRST).forEach { item ->
+                out.append("\n- ${item.product.productName.oneLine()} | expired ${item.daysAgo} days ago")
+            }
+        }
+
+        return out.toString()
     }
 
     /** The model sometimes ignores "no markdown", so tidy common cases. */
@@ -245,5 +283,8 @@ class ChatRepository(
 
         /** How many saved products are included in the prompt. */
         private const val MAX_PRODUCTS = 60
+
+        /** How many "use first" and "expired" lines are added to the prompt. */
+        private const val MAX_USE_FIRST = 10
     }
 }

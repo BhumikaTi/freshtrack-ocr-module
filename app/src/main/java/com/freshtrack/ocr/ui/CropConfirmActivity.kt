@@ -22,6 +22,7 @@ import com.freshtrack.ocr.ImagePreprocessor
 import com.freshtrack.ocr.OcrResultListener
 import com.freshtrack.ocr.OcrSource
 import com.freshtrack.ocr.OcrTextExtractor
+import com.freshtrack.ocr.CategoryGuesser
 import com.freshtrack.ocr.R
 import com.freshtrack.ocr.data.GeminiVisionDateReader
 import com.freshtrack.ocr.data.VisionDateResult
@@ -1137,7 +1138,8 @@ class CropConfirmActivity :
 
     private fun deliverExpiry(
         productName: String,
-        expiryDate: String
+        expiryDate: String,
+        category: String = ""
     ) {
 
         // Opened from the Add Product screen: send the date back.
@@ -1170,6 +1172,13 @@ class CropConfirmActivity :
             "expiryDate",
             expiryDate
         )
+
+        // Our own keyword rules come first so the same product gets the same category whether it was
+        // read by the AI or offline. The AI's category is only used when the rules don't know the name.
+        val finalCategory = CategoryGuesser.guess(productName) ?: category
+        if (finalCategory.isNotBlank()) {
+            intent.putExtra("category", finalCategory)
+        }
 
         startActivity(intent)
         finish()
@@ -1222,8 +1231,9 @@ class CropConfirmActivity :
                     ).show()
 
                     deliverExpiry(
-                        productName,
-                        result.date.format()
+                        productName.ifBlank { result.productName },
+                        result.date.format(),
+                        result.category
                     )
                 }
 

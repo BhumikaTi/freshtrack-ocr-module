@@ -125,6 +125,66 @@
                 app:strokeColor="@color/green_primary"
                 app:strokeWidth="1dp" />
 
+            <!-- Use First -->
+            <TextView
+                android:id="@+id/tvUseFirstTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="Use First"
+                android:textColor="@color/text_primary"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvUseFirstHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Food to finish before it goes off"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <!-- Dynamic Use First list -->
+            <LinearLayout
+                android:id="@+id/layoutUseFirst"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvUseFirstEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:padding="16dp"
+                    android:text="Scan some food to see what to use first."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+            <!-- Expired items: check and throw away -->
+            <TextView
+                android:id="@+id/tvExpiredTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Expired. Check and throw away"
+                android:textColor="@color/error_bright"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/layoutExpired"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
             <!-- Your Products Heading -->
             <LinearLayout
                 android:layout_width="match_parent"

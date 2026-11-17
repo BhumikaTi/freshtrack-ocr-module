@@ -19,7 +19,11 @@ data class GeminiTool(
 
 data class GeminiResponse(val candidates: List<GeminiCandidate>?)
 
-data class GeminiCandidate(val content: GeminiContent?)
+data class GeminiCandidate(
+    val content: GeminiContent?,
+    // Present only when Google Search was really used to build the answer.
+    val groundingMetadata: com.google.gson.JsonElement? = null
+)
 
 
 data class GeminiAnswer(

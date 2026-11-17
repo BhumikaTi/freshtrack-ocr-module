@@ -38,7 +38,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val sending: StateFlow<Boolean> = _sending.asStateFlow()
 
     /** Whether the user's saved products are included in the prompt. */
-    var sharePantry: Boolean = true
+    var sharePantry: Boolean = false
 
     fun send(text: String) {
         val clean = text.trim()

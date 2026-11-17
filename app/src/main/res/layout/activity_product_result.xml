@@ -163,6 +163,71 @@
                     android:lineSpacingExtra="5dp" />
             </LinearLayout>
 
+            <!-- AI product guide (only runs when the user taps the button) -->
+            <LinearLayout
+                android:id="@+id/guideCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="vertical"
+                android:padding="18dp"
+                android:background="#FFFFFF"
+                android:elevation="2dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Product guide"
+                    android:textColor="#176B42"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/guideHint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="A simple AI explanation of what this product does and who should be careful. Sends the product name and ingredients (no photo) to Google Gemini."
+                    android:textColor="#7A877E"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/guideButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Generate guide" />
+
+                <ProgressBar
+                    android:id="@+id/guideProgress"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="10dp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/guideText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textColor="#34483B"
+                    android:textSize="15sp"
+                    android:lineSpacingExtra="5dp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/guideNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#B26A00"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
             <!-- Allergen information -->
             <LinearLayout
                 android:id="@+id/allergenCard"

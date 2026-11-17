@@ -24,7 +24,11 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.freshtrack.ocr.ExpiryNotificationWorker
+import com.freshtrack.ocr.ExpiredItem
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.Urgency
+import com.freshtrack.ocr.UseFirstItem
+import com.freshtrack.ocr.UseFirstSelector
 import com.freshtrack.ocr.auth.CurrentUserProvider
 import com.freshtrack.ocr.auth.SupabaseAuthRepository
 import com.freshtrack.ocr.data.Product
@@ -32,9 +36,12 @@ import com.freshtrack.ocr.data.ProductDatabase
 import com.freshtrack.ocr.data.ShoppingItem
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
@@ -42,12 +49,23 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1001
         private const val EXPIRY_WORK_NAME = "expiry_notification_work"
+
+        /** How many items the Use First card shows on the home screen. */
+        private const val USE_FIRST_SHOWN = 5
+        private const val EXPIRED_SHOWN = 3
+
+        private val DATE_FORMAT: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
     }
 
     private lateinit var recentProductsContainer: LinearLayout
     private lateinit var recentProductsEmpty: TextView
     private lateinit var shoppingPreviewContainer: LinearLayout
     private lateinit var shoppingEmpty: TextView
+    private lateinit var useFirstContainer: LinearLayout
+    private lateinit var useFirstEmpty: TextView
+    private lateinit var expiredTitle: TextView
+    private lateinit var expiredContainer: LinearLayout
 
     private val database by lazy {
         ProductDatabase.getDatabase(applicationContext)
@@ -73,6 +91,18 @@ class MainActivity : AppCompatActivity() {
 
         shoppingEmpty =
             findViewById(R.id.tvShoppingListEmpty)
+
+        useFirstContainer =
+            findViewById(R.id.layoutUseFirst)
+
+        useFirstEmpty =
+            findViewById(R.id.tvUseFirstEmpty)
+
+        expiredTitle =
+            findViewById(R.id.tvExpiredTitle)
+
+        expiredContainer =
+            findViewById(R.id.layoutExpired)
 
         requestNotificationPermission()
         scheduleExpiryNotifications()
@@ -119,6 +149,7 @@ class MainActivity : AppCompatActivity() {
 
         if (::recentProductsContainer.isInitialized) {
             loadRecentProducts()
+            loadUseFirst()
             loadShoppingPreview()
         }
     }
@@ -254,6 +285,251 @@ class MainActivity : AppCompatActivity() {
         card.addView(row)
 
         return card
+    }
+
+    // ---------- USE FIRST ----------
+
+    private fun loadUseFirst() {
+        lifecycleScope.launch {
+            try {
+                val userId = CurrentUserProvider.getUserId()
+
+                if (userId.isNullOrBlank()) {
+                    showUseFirstMessage("Please log in to see what to use first.")
+                    showExpired(emptyList())
+                    return@launch
+                }
+
+                val products = database.productDao().getAllProducts(userId)
+                val result = UseFirstSelector.select(products)
+
+                displayUseFirst(result.top(USE_FIRST_SHOWN), result.useFirst.size)
+                showExpired(result.expired)
+
+            } catch (exception: Exception) {
+                showUseFirstMessage("Couldn't load this list.")
+                showExpired(emptyList())
+            }
+        }
+    }
+
+    private fun displayUseFirst(items: List<UseFirstItem>, total: Int) {
+        useFirstContainer.removeAllViews()
+
+        if (items.isEmpty()) {
+            showUseFirstMessage("Nothing to use up. Scan some food to see it here.")
+            return
+        }
+
+        items.forEach { item ->
+            useFirstContainer.addView(createUseFirstCard(item))
+        }
+
+        if (total > items.size) {
+            useFirstContainer.addView(
+                TextView(this).apply {
+                    text = "+ ${total - items.size} more in Your Products"
+                    textSize = 13f
+                    setTextColor(getColor(R.color.text_secondary))
+                    setPadding(dp(4), 0, 0, dp(4))
+                }
+            )
+        }
+    }
+
+    private fun showUseFirstMessage(message: String) {
+        useFirstContainer.removeAllViews()
+        useFirstEmpty.text = message
+        useFirstContainer.addView(useFirstEmpty)
+    }
+
+    private fun showExpired(items: List<ExpiredItem>) {
+        expiredContainer.removeAllViews()
+
+        if (items.isEmpty()) {
+            expiredTitle.visibility = View.GONE
+            expiredContainer.visibility = View.GONE
+            return
+        }
+
+        expiredTitle.visibility = View.VISIBLE
+        expiredContainer.visibility = View.VISIBLE
+
+        items.take(EXPIRED_SHOWN).forEach { item ->
+            expiredContainer.addView(createExpiredCard(item))
+        }
+
+        if (items.size > EXPIRED_SHOWN) {
+            expiredContainer.addView(
+                TextView(this).apply {
+                    text = "+ ${items.size - EXPIRED_SHOWN} more in Your Products"
+                    textSize = 13f
+                    setTextColor(getColor(R.color.text_secondary))
+                    setPadding(dp(4), 0, 0, dp(4))
+                }
+            )
+        }
+    }
+
+    private fun createUseFirstCard(item: UseFirstItem): MaterialCardView {
+
+        val (label, colorRes) = when (item.urgency) {
+            Urgency.TODAY -> "Expires today" to R.color.error_bright
+            Urgency.WITHIN_3_DAYS -> daysText(item.daysLeft) to R.color.error_bright
+            Urgency.THIS_WEEK -> daysText(item.daysLeft) to R.color.warning_amber
+            Urgency.LATER -> daysText(item.daysLeft) to R.color.text_secondary
+        }
+
+        val date = item.expiry.format(DATE_FORMAT)
+
+        return createItemCard(
+            title = item.product.productName,
+            subtitle = "$label  ·  $date",
+            subtitleColor = getColor(colorRes),
+            buttonText = "Used",
+            onButton = {
+                removeProduct(item.product, "\"${item.product.productName}\" marked as used")
+            }
+        )
+    }
+
+    private fun createExpiredCard(item: ExpiredItem): MaterialCardView {
+
+        val label =
+            if (item.daysAgo == 1) "Expired yesterday"
+            else "Expired ${item.daysAgo} days ago"
+
+        return createItemCard(
+            title = item.product.productName,
+            subtitle = "$label  ·  ${item.expiry.format(DATE_FORMAT)}",
+            subtitleColor = getColor(R.color.error_bright),
+            buttonText = "Remove",
+            onButton = {
+                removeProduct(item.product, "\"${item.product.productName}\" removed")
+            }
+        )
+    }
+
+    private fun createItemCard(
+        title: String,
+        subtitle: String,
+        subtitleColor: Int,
+        buttonText: String,
+        onButton: () -> Unit
+    ): MaterialCardView {
+
+        val card = MaterialCardView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dp(10)
+            }
+
+            radius = dp(18).toFloat()
+            cardElevation = 0f
+            setCardBackgroundColor(getColor(R.color.card_dark))
+            strokeWidth = dp(1)
+            strokeColor = getColor(R.color.border_light)
+        }
+
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(16), dp(10), dp(10), dp(10))
+        }
+
+        val texts = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+        }
+
+        texts.addView(
+            TextView(this).apply {
+                text = title
+                textSize = 16f
+                setTextColor(getColor(R.color.text_primary))
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+            }
+        )
+
+        texts.addView(
+            TextView(this).apply {
+                text = subtitle
+                textSize = 13f
+                setPadding(0, dp(4), 0, 0)
+                setTextColor(subtitleColor)
+            }
+        )
+
+        val button = MaterialButton(
+            this,
+            null,
+            com.google.android.material.R.attr.materialButtonOutlinedStyle
+        ).apply {
+            text = buttonText
+            setAllCaps(false)
+            textSize = 13f
+            minWidth = 0
+            minimumWidth = 0
+            setTextColor(getColor(R.color.green_primary))
+            setOnClickListener { onButton() }
+        }
+
+        row.addView(texts)
+        row.addView(button)
+        card.addView(row)
+
+        return card
+    }
+
+    private fun daysText(daysLeft: Int): String =
+        when {
+            daysLeft <= 0 -> "Expires today"
+            daysLeft == 1 -> "Expires tomorrow"
+            daysLeft > 60 -> "Expires later"
+            else -> "Expires in $daysLeft days"
+        }
+
+    /** Removes the product from the list, with an Undo option. */
+    private fun removeProduct(product: Product, message: String) {
+        lifecycleScope.launch {
+            try {
+                val userId = CurrentUserProvider.getUserId()
+
+                if (userId.isNullOrBlank()) return@launch
+
+                database.productDao().deleteProductById(product.id, userId)
+
+                loadRecentProducts()
+                loadUseFirst()
+
+                Snackbar.make(
+                    findViewById(android.R.id.content),
+                    message,
+                    Snackbar.LENGTH_LONG
+                ).setAction("UNDO") {
+                    lifecycleScope.launch {
+                        database.productDao().insertProduct(product)
+                        loadRecentProducts()
+                        loadUseFirst()
+                    }
+                }.show()
+
+            } catch (exception: Exception) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Couldn't update the product.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     // ---------- SHOPPING LIST PREVIEW ----------

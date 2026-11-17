@@ -14,7 +14,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.io.ByteArrayOutputStream
 
 sealed class VisionDateResult {
-    data class Found(val date: ExpiryDateResult, val text: String) : VisionDateResult()
+    data class Found(val date: ExpiryDateResult, val text: String, val productName: String = "", val category: String = "") : VisionDateResult()
     data class NotFound(val reason: String) : VisionDateResult()
 }
 
@@ -28,20 +28,32 @@ sealed class VisionDateResult {
 object GeminiVisionDateReader {
 
     private const val TAG = "FreshTrackVision"
-    private const val MAX_SIDE = 1280
+    private const val MAX_SIDE = 2048
 
     // Whole attempt (all retries) must finish in this time, so the dialog never hangs.
     private const val TOTAL_TIMEOUT_MS = 12_000L
     private const val BACKUP_MODEL = "gemini-3.5-flash-lite"
     private val RETRYABLE = setOf(429, 500, 502, 503, 504)
 
-    private const val PROMPT =
+    val CATEGORIES = listOf(
+        "Fruits & Vegetables", "Dairy", "Meat & Seafood", "Bakery", "Beverages", "Snacks",
+        "Pantry", "Personal Care", "Cleaning Supplies", "Pet Supplies", "Cosmetics", "Medicines", "Other"
+    )
+
+    private val PROMPT =
         "This is a photo of a product package, cropped near its printed dates. " +
                 "The text is often dot-matrix or inkjet printed and may be faint or tilted. " +
                 "Copy the printed date information exactly as it appears, one short line per item, " +
                 "with its label if one is visible. Examples of lines: \"MFG 05/2026\", " +
                 "\"EXP 11/2026\", \"BEST BEFORE 12 MONTHS FROM MFG\", \"USE BY 15 NOV 2026\". " +
+                "Also copy any line that says how long the product lasts after it was made, such as " +
+                "\"EXPIRY 36 MONTHS FROM MANUFACTURED\" or \"USE WITHIN 24 MONTHS\", even if it is in small print " +
+                "away from the dates. " +
                 "Copy the digits exactly; do not guess or invent a date. " +
+                "If the product is identifiable from the printed text, add two extra lines at the very end: " +
+                "NAME: <a SHORT name of 2 to 4 words: brand plus product type only. No flavours, variants, claims or sizes. e.g. Joy Skin Moisturizer, Head & Shoulders Shampoo, Amul Butter> " +
+                "and CATEGORY: <exactly one of: ${CATEGORIES.joinToString(", ")}>. " +
+                "Only use words you can actually read or that are clearly implied by the pack; if unsure, leave NAME and CATEGORY out. " +
                 "If no date is printed or readable, reply with exactly: NONE. " +
                 "Reply with the lines only, no other words."
 
@@ -108,10 +120,18 @@ object GeminiVisionDateReader {
                 return VisionDateResult.NotFound("No date visible")
             }
 
-            val date = ExpiryDateParser.extract(text)
+            // Split off the optional NAME: line so it never confuses the date parser.
+            val nameLine = text.lines().lastOrNull { it.trim().startsWith("NAME:", ignoreCase = true) }
+            val productName = nameLine?.substringAfter(":")?.trim().orEmpty().take(40)
+            val categoryLine = text.lines().lastOrNull { it.trim().startsWith("CATEGORY:", ignoreCase = true) }
+            val category = categoryLine?.substringAfter(":")?.trim().orEmpty()
+                .let { c -> CATEGORIES.firstOrNull { it.equals(c, ignoreCase = true) } }.orEmpty()
+            val dateText = text.lines().filterNot { it === nameLine || it === categoryLine }.joinToString("\n").trim()
+
+            val date = ExpiryDateParser.extract(dateText)
                 ?: return VisionDateResult.NotFound("AI text had no usable date")
 
-            VisionDateResult.Found(date, text)
+            VisionDateResult.Found(date, dateText, productName, category)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -135,7 +155,7 @@ object GeminiVisionDateReader {
                 bitmap
             }
         val out = ByteArrayOutputStream()
-        scaled.compress(Bitmap.CompressFormat.JPEG, 85, out)
+        scaled.compress(Bitmap.CompressFormat.JPEG, 90, out)
         return Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
     }
 }

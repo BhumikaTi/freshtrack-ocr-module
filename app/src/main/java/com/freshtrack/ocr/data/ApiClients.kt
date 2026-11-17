@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 private class UserAgentInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request().newBuilder()
-            .header("User-Agent", "FreshTrack/1.0 (Android capstone project; contact: your-email@example.com)")
+            .header("User-Agent", "FreshTrack/1.0 (Android capstone project)")
             .build()
         return chain.proceed(request)
     }
@@ -20,7 +20,8 @@ private class UserAgentInterceptor : Interceptor {
 object ApiClients {
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY // turn down to NONE before your demo
+        // Bodies can contain product data and user details, so only log them in debug builds.
+        level = if (com.freshtrack.ocr.BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
     }
 
     private val okHttpClient = OkHttpClient.Builder()

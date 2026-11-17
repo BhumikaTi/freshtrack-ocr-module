@@ -1,6 +1,8 @@
 package com.freshtrack.ocr.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -8,10 +10,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.core.TorchState
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -54,6 +60,17 @@ class CameraScanActivity : AppCompatActivity() {
             }
         }
 
+    // Asks for camera access the first time; without it CameraX would just show a black screen.
+    private val permissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                bindCameraUseCases()
+            } else {
+                Toast.makeText(this, "Camera access is needed to scan. You can enter details manually instead.", Toast.LENGTH_LONG).show()
+                finish()
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera_scan)
@@ -64,7 +81,13 @@ class CameraScanActivity : AppCompatActivity() {
         btnCapture = findViewById(R.id.btnCapture)
         btnFlashlight = findViewById(R.id.btnFlashlight)
 
-        bindCameraUseCases()
+        deleteOldScanPhotos()
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            bindCameraUseCases()
+        } else {
+            permissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+        enableTapToFocus()
         btnCapture.setOnClickListener { captureAndProcess() }
         btnFlashlight.setOnClickListener {
             val hasFlash = camera?.cameraInfo?.hasFlashUnit() ?: false
@@ -77,6 +100,26 @@ class CameraScanActivity : AppCompatActivity() {
         }
     }
 
+    // Scan photos are only needed while the crop/AI screen is open, so remove old ones.
+    private fun deleteOldScanPhotos() {
+        val cutoff = System.currentTimeMillis() - 60 * 60 * 1000L
+        cacheDir.listFiles { f -> f.name.startsWith("scan_") && f.name.endsWith(".jpg") && f.lastModified() < cutoff }
+            ?.forEach { it.delete() }
+    }
+
+    // Tap the preview to focus there. Helps a lot with small print on curved packs.
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    private fun enableTapToFocus() {
+        previewView.setOnTouchListener { _, event ->
+            if (event.action == android.view.MotionEvent.ACTION_UP) {
+                val point = previewView.meteringPointFactory.createPoint(event.x, event.y)
+                val action = FocusMeteringAction.Builder(point).build()
+                camera?.cameraControl?.startFocusAndMetering(action)
+            }
+            true
+        }
+    }
+
     private fun bindCameraUseCases() {
         val providerFuture = ProcessCameraProvider.getInstance(this)
         providerFuture.addListener({
@@ -84,8 +127,14 @@ class CameraScanActivity : AppCompatActivity() {
             cameraProvider = provider
 
             val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
+            // Ask for the biggest picture the camera can take, so small print stays readable.
+            val resolution = ResolutionSelector.Builder()
+                .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY)
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+                .build()
             val capture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                .setResolutionSelector(resolution)
                 .build()
             imageCapture = capture
 

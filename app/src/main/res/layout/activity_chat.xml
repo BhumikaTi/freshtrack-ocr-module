@@ -89,7 +89,7 @@
             android:id="@+id/switchPantry"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:checked="true"
+            android:checked="false"
             app:useMaterialThemeColors="true" />
     </LinearLayout>
 

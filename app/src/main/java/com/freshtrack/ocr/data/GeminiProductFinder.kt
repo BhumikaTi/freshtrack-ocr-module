@@ -30,6 +30,14 @@ class GeminiProductFinder(
             return@withContext GeminiResult.Unavailable("The AI lookup isn't set up in this build.")
         }
 
+        // Without Google Search the model can only answer from memory, and it will make up a
+        // product for a barcode it does not know. So the lookup is skipped unless search is on.
+        if (!BuildConfig.GEMINI_USE_SEARCH) {
+            return@withContext GeminiResult.Unavailable(
+                "The AI lookup needs web search, which is turned off in this build."
+            )
+        }
+
         try {
             val response = service.generate(MODEL, buildRequest(barcode))
             Log.d(TAG, "find($barcode): httpCode=${response.code()}")
@@ -39,8 +47,9 @@ class GeminiProductFinder(
                 return@withContext GeminiResult.Unavailable(describeHttpError(response.code()))
             }
 
-            val text = response.body()
-                ?.candidates?.firstOrNull()
+            val candidate = response.body()?.candidates?.firstOrNull()
+
+            val text = candidate
                 ?.content?.parts
                 ?.mapNotNull { it.text }
                 ?.joinToString("")
@@ -49,6 +58,13 @@ class GeminiProductFinder(
 
             if (text.isBlank()) {
                 return@withContext GeminiResult.Unavailable("The AI lookup gave no answer.")
+            }
+
+            // Only trust the answer if Google Search was actually used. If the model answered
+            // without any search sources, it is a guess, so it is thrown away.
+            if (!usedWebSearch(candidate?.groundingMetadata)) {
+                Log.w(TAG, "find($barcode): answer had no search sources, ignoring it")
+                return@withContext GeminiResult.NotIdentified
             }
 
             parse(barcode, text)
@@ -84,6 +100,12 @@ class GeminiProductFinder(
             contents = listOf(GeminiContent(listOf(GeminiPart(prompt)))),
             tools = if (BuildConfig.GEMINI_USE_SEARCH) listOf(GeminiTool()) else null
         )
+    }
+
+    private fun usedWebSearch(metadata: com.google.gson.JsonElement?): Boolean {
+        if (metadata == null || !metadata.isJsonObject) return false
+        val chunks = metadata.asJsonObject.getAsJsonArray("groundingChunks")
+        return chunks != null && chunks.size() > 0
     }
 
     private fun parse(barcode: String, text: String): GeminiResult {

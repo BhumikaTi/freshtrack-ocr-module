@@ -9,6 +9,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,6 +17,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import coil.load
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.data.GuideBasis
+import com.freshtrack.ocr.data.GuideResult
+import com.freshtrack.ocr.data.ProductGuideGenerator
 import com.freshtrack.ocr.data.ProductInfo
 import com.freshtrack.ocr.data.ProductLookupResult
 import com.freshtrack.ocr.data.ProductRepository
@@ -25,6 +29,7 @@ import java.util.Locale
 class ProductResultActivity : AppCompatActivity() {
 
     private val repository = ProductRepository()
+    private val guideGenerator = ProductGuideGenerator()
 
 
     private val saveProductLauncher =
@@ -126,7 +131,59 @@ class ProductResultActivity : AppCompatActivity() {
         }
 
         dataNote.visibility = View.VISIBLE
+        setupGuideCard(product, aiSuggested)
         setupSaveCard(product)
+    }
+
+    private fun setupGuideCard(product: ProductInfo, aiSuggested: Boolean) {
+        val card = findViewById<View>(R.id.guideCard)
+        val button = findViewById<Button>(R.id.guideButton)
+        val progress = findViewById<ProgressBar>(R.id.guideProgress)
+        val guideText = findViewById<TextView>(R.id.guideText)
+        val note = findViewById<TextView>(R.id.guideNote)
+
+        card.visibility = View.VISIBLE
+        guideText.visibility = View.GONE
+        note.visibility = View.GONE
+        button.visibility = View.VISIBLE
+        button.isEnabled = true
+
+        button.setOnClickListener {
+            button.isEnabled = false
+            progress.visibility = View.VISIBLE
+            note.visibility = View.GONE
+
+            lifecycleScope.launch {
+                // An ingredient list that came from the AI is treated as AI-sourced in the label.
+                val result = guideGenerator.generate(product)
+                progress.visibility = View.GONE
+
+                when (result) {
+                    is GuideResult.Ready -> {
+                        guideText.text = result.text
+                        guideText.visibility = View.VISIBLE
+                        button.visibility = View.GONE
+                        note.text = when {
+                            result.basis == GuideBasis.OPEN_FACTS_INGREDIENTS && !aiSuggested ->
+                                "AI guide based on the Open Facts ingredient list. General information, not medical advice."
+                            result.basis == GuideBasis.OPEN_FACTS_INGREDIENTS ->
+                                "AI guide based on an ingredient list found by AI web search, which may be wrong. Not medical advice."
+                            result.basis == GuideBasis.AI_SEARCH_INGREDIENTS ->
+                                "AI guide using ingredients found by AI web search, which may be wrong. Please check the packaging. Not medical advice."
+                            else ->
+                                "No ingredient list was available, so this only describes this type of product in general. Not medical advice."
+                        }
+                        note.visibility = View.VISIBLE
+                    }
+
+                    is GuideResult.Unavailable -> {
+                        note.text = result.reason
+                        note.visibility = View.VISIBLE
+                        button.isEnabled = true
+                    }
+                }
+            }
+        }
     }
 
     private fun showImage(url: String?) {
