@@ -38,17 +38,11 @@
         <activity android:name=".ui.ResultActivity" android:exported="false" />
         <activity android:name=".ui.ManualEntryActivity" android:exported="false" />
 
-        <!-- Home screen: no launcher filter -->
+        <!-- Home screen: opened after successful login -->
         <activity
             android:name=".ui.MainActivity"
-            android:exported="true"
-            android:theme="@style/Theme.OcrTest">
-
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:exported="false"
+            android:theme="@style/Theme.OcrTest" />
 
         <activity
             android:name=".ui.CameraScanActivity"
