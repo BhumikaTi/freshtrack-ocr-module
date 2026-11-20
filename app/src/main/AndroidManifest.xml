@@ -5,7 +5,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <uses-feature
@@ -69,23 +68,16 @@
         <activity android:name=".ui.AddOptionsActivity" android:exported="false" />
         <activity android:name=".ui.ProductDetailsActivity" android:exported="false" />
 
-        <!-- Login screen: only launcher activity -->
+        <!-- Login screen: launcher activity AND handles email confirmation / password reset links -->
         <activity
             android:name=".ui.LoginActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
-        </activity>
-
-        <activity
-            android:name=".ui.SignupActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.ResetPasswordActivity"
-            android:exported="true">
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -98,6 +90,15 @@
             </intent-filter>
 
         </activity>
+
+        <activity
+            android:name=".ui.SignupActivity"
+            android:exported="false" />
+
+        <!-- Opened by the app after a password-reset link is handled in LoginActivity -->
+        <activity
+            android:name=".ui.ResetPasswordActivity"
+            android:exported="false" />
 
     </application>
 </manifest>

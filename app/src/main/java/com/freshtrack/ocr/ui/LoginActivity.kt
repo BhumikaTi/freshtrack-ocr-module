@@ -3,22 +3,25 @@ package com.freshtrack.ocr.ui
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.core.content.ContextCompat
-import com.google.android.material.button.MaterialButton
+import androidx.lifecycle.lifecycleScope
 import com.freshtrack.ocr.R
 import com.freshtrack.ocr.auth.SupabaseAuthRepository
+import com.freshtrack.ocr.auth.SupabaseClientProvider
+import com.google.android.material.button.MaterialButton
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.handleDeeplinks
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.freshtrack.ocr.auth.SupabaseClientProvider
-import io.github.jan.supabase.auth.auth
+import com.freshtrack.ocr.auth.PasswordVisibility
 
 class LoginActivity : AppCompatActivity() {
 
@@ -40,22 +43,6 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        lifecycleScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    SupabaseClientProvider.client.auth.awaitInitialization()
-                }
-
-                val session = SupabaseClientProvider.client.auth.currentSessionOrNull()
-
-                if (session != null) {
-                    startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                    finish()
-                }
-            } catch (e: Exception) {
-                // If session check fails, keep the login screen available.
-            }
-        }
         setContentView(R.layout.activity_login)
 
         btnEmailTab = findViewById(R.id.btnEmailTab)
@@ -69,20 +56,14 @@ class LoginActivity : AppCompatActivity() {
         btnSendOtp = findViewById(R.id.btnSendOtp)
         btnSignup = findViewById(R.id.btnSignup)
         tvForgotPassword = findViewById(R.id.tvForgotPassword)
+        PasswordVisibility.attach(etPassword)
 
         showEmailMode()
 
-        btnEmailTab.setOnClickListener {
-            showEmailMode()
-        }
+        btnEmailTab.setOnClickListener { showEmailMode() }
+        btnPhoneTab.setOnClickListener { showPhoneMode() }
 
-        btnPhoneTab.setOnClickListener {
-            showPhoneMode()
-        }
-
-        btnLogin.setOnClickListener {
-            loginWithEmail()
-        }
+        btnLogin.setOnClickListener { loginWithEmail() }
 
         btnSendOtp.setOnClickListener {
             Toast.makeText(
@@ -92,12 +73,86 @@ class LoginActivity : AppCompatActivity() {
             ).show()
         }
 
-        tvForgotPassword.setOnClickListener {
-            resetPassword()
-        }
+        tvForgotPassword.setOnClickListener { resetPassword() }
 
         btnSignup.setOnClickListener {
             startActivity(Intent(this, SignupActivity::class.java))
+        }
+
+        // If the app was opened from an email link, handle it.
+        // Otherwise, check for an existing login session.
+        if (isAuthLink(intent)) {
+            handleAuthLink(intent)
+        } else {
+            checkExistingSession()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (isAuthLink(intent)) {
+            handleAuthLink(intent)
+        }
+    }
+
+    private fun checkExistingSession() {
+        lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    SupabaseClientProvider.client.auth.awaitInitialization()
+                }
+
+                val session = SupabaseClientProvider.client.auth.currentSessionOrNull()
+                if (session != null) {
+                    startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                    finish()
+                }
+            } catch (e: Exception) {
+                // If the session check fails, keep the login screen available.
+                Log.e(TAG, "Session check failed", e)
+            }
+        }
+    }
+
+    private fun isAuthLink(intent: Intent?): Boolean {
+        val data = intent?.data ?: return false
+        return data.scheme == "freshtrack" && data.host == "auth-callback"
+    }
+
+    private fun handleAuthLink(intent: Intent) {
+        val isRecovery = intent.data?.toString()?.contains("type=recovery") == true
+
+        lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    SupabaseClientProvider.client.auth.awaitInitialization()
+                    SupabaseClientProvider.client.handleDeeplinks(intent) {
+                        // Session created from the link
+                    }
+                }
+
+                if (isRecovery) {
+                    // Password reset link: open the set-new-password screen
+                    startActivity(Intent(this@LoginActivity, ResetPasswordActivity::class.java))
+                } else {
+                    // Email confirmation link: user is now logged in
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Email confirmed! Welcome.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                    finish()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Deep link handling failed", e)
+                Toast.makeText(
+                    this@LoginActivity,
+                    "Link expired or invalid. Please try again.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 
@@ -107,7 +162,6 @@ class LoginActivity : AppCompatActivity() {
         phoneLayout.visibility = View.GONE
         tvForgotPassword.visibility = View.VISIBLE
         btnLogin.visibility = View.VISIBLE
-
         updateTabColors()
     }
 
@@ -117,7 +171,6 @@ class LoginActivity : AppCompatActivity() {
         phoneLayout.visibility = View.VISIBLE
         tvForgotPassword.visibility = View.GONE
         btnLogin.visibility = View.GONE
-
         updateTabColors()
     }
 
@@ -191,7 +244,7 @@ class LoginActivity : AppCompatActivity() {
                 }
                 Toast.makeText(
                     this@LoginActivity,
-                    "Password reset email requested.",
+                    "Password reset email sent. Check your inbox.",
                     Toast.LENGTH_LONG
                 ).show()
             } catch (e: Exception) {
@@ -202,5 +255,9 @@ class LoginActivity : AppCompatActivity() {
                 ).show()
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "LoginActivity"
     }
 }

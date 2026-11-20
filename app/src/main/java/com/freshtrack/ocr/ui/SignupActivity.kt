@@ -9,10 +9,12 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.auth.PasswordValidator
 import com.freshtrack.ocr.auth.SupabaseAuthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.freshtrack.ocr.auth.PasswordVisibility
 
 class SignupActivity : AppCompatActivity() {
 
@@ -28,21 +30,25 @@ class SignupActivity : AppCompatActivity() {
         val confirmPassword = findViewById<EditText>(R.id.etConfirmPassword)
         val createAccount = findViewById<Button>(R.id.btnCreateAccount)
         val goToLogin = findViewById<TextView>(R.id.tvGoToLogin)
+        PasswordVisibility.attach(password)
+        PasswordVisibility.attach(confirmPassword)
 
         createAccount.setOnClickListener {
+            val userName = name.text.toString().trim()
             val userEmail = email.text.toString().trim()
             val userPassword = password.text.toString()
             val confirm = confirmPassword.text.toString()
+            val passwordError = PasswordValidator.validate(userPassword)
 
             when {
-                name.text.toString().trim().isEmpty() ->
+                userName.isEmpty() ->
                     name.error = "Enter your name"
 
                 userEmail.isEmpty() ->
                     email.error = "Enter your email"
 
-                userPassword.length < 6 ->
-                    password.error = "Password must be at least 6 characters"
+                passwordError != null ->
+                    password.error = passwordError
 
                 userPassword != confirm ->
                     confirmPassword.error = "Passwords do not match"
