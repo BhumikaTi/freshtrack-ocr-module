@@ -51,7 +51,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Sign up"
+                    android:text="Log in"
                     android:textColor="@color/text_primary"
                     android:textSize="25sp"
                     android:textStyle="bold" />
@@ -60,7 +60,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Create your FreshTrack account"
+                    android:text="Welcome to FreshTrack"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 

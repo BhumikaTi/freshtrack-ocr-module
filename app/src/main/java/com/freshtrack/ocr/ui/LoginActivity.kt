@@ -13,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.auth.GuestSession
+import com.freshtrack.ocr.auth.PasswordVisibility
 import com.freshtrack.ocr.auth.SupabaseAuthRepository
 import com.freshtrack.ocr.auth.SupabaseClientProvider
 import com.google.android.material.button.MaterialButton
@@ -21,7 +23,6 @@ import io.github.jan.supabase.auth.handleDeeplinks
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.freshtrack.ocr.auth.PasswordVisibility
 
 class LoginActivity : AppCompatActivity() {
 
@@ -105,6 +106,7 @@ class LoginActivity : AppCompatActivity() {
 
                 val session = SupabaseClientProvider.client.auth.currentSessionOrNull()
                 if (session != null) {
+                    migrateGuestData()
                     startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                     finish()
                 }
@@ -137,6 +139,8 @@ class LoginActivity : AppCompatActivity() {
                     startActivity(Intent(this@LoginActivity, ResetPasswordActivity::class.java))
                 } else {
                     // Email confirmation link: user is now logged in
+                    migrateGuestData()
+
                     Toast.makeText(
                         this@LoginActivity,
                         "Email confirmed! Welcome.",
@@ -154,6 +158,15 @@ class LoginActivity : AppCompatActivity() {
                 ).show()
             }
         }
+    }
+
+    /**
+     * Moves guest products to the logged-in account.
+     * Does nothing if nobody is logged in.
+     */
+    private suspend fun migrateGuestData() {
+        val loggedInId = SupabaseClientProvider.client.auth.currentUserOrNull()?.id ?: return
+        GuestSession.moveGuestDataTo(this, loggedInId)
     }
 
     private fun showEmailMode() {
@@ -207,6 +220,9 @@ class LoginActivity : AppCompatActivity() {
                 withContext(Dispatchers.IO) {
                     authRepository.login(email, password)
                 }
+
+                // Move any guest products into this account before opening home.
+                migrateGuestData()
 
                 Toast.makeText(
                     this@LoginActivity,

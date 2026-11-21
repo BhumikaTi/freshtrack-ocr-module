@@ -26,4 +26,8 @@ interface ProductDao {
 
     @Query("DELETE FROM Product WHERE id = :productId AND userId = :userId")
     suspend fun deleteProductById(productId: Int, userId: String)
+
+    // Moves guest products to a logged-in user after login.
+    @Query("UPDATE Product SET userId = :newUserId WHERE userId = :guestId")
+    suspend fun moveGuestProducts(newUserId: String, guestId: String)
 }

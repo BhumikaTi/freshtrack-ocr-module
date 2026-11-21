@@ -30,6 +30,7 @@ import com.freshtrack.ocr.Urgency
 import com.freshtrack.ocr.UseFirstItem
 import com.freshtrack.ocr.UseFirstSelector
 import com.freshtrack.ocr.auth.CurrentUserProvider
+import com.freshtrack.ocr.auth.GuestSession
 import com.freshtrack.ocr.auth.SupabaseAuthRepository
 import com.freshtrack.ocr.data.Product
 import com.freshtrack.ocr.data.ProductDatabase
@@ -133,10 +134,13 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
-        findViewById<MaterialButton>(R.id.btnLogout)
-            .setOnClickListener {
-                logoutUser()
-            }
+        // Guest sees "Login" instead of "Logout".
+        val btnLogout = findViewById<MaterialButton>(R.id.btnLogout)
+        btnLogout.text = if (GuestSession.isGuestActive) "Login" else "Logout"
+
+        btnLogout.setOnClickListener {
+            logoutUser()
+        }
 
         findViewById<MaterialButton>(R.id.btnAddShoppingItem)
             .setOnClickListener {
@@ -159,13 +163,19 @@ class MainActivity : AppCompatActivity() {
     private fun logoutUser() {
         lifecycleScope.launch {
             try {
-                withContext(Dispatchers.IO) {
-                    SupabaseAuthRepository().logout()
+                if (GuestSession.isGuestActive) {
+                    // Guest has no account to sign out of. Just end guest mode.
+                    GuestSession.clear(this@MainActivity)
+                } else {
+                    withContext(Dispatchers.IO) {
+                        SupabaseAuthRepository().logout()
+                    }
                 }
 
+                // Go back to the welcome screen (Login / Sign up / Continue as guest).
                 val intent = Intent(
                     this@MainActivity,
-                    LoginActivity::class.java
+                    WelcomeActivity::class.java
                 ).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                             Intent.FLAG_ACTIVITY_CLEAR_TASK

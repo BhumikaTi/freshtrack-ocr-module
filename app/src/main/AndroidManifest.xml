@@ -26,6 +26,18 @@
         android:theme="@style/Theme.OcrTest"
         tools:targetApi="31">
 
+        <!-- Welcome screen: the app's launcher. Login, Sign up, or Continue as guest -->
+        <activity
+            android:name=".ui.WelcomeActivity"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
         <activity
             android:name=".ui.ChatActivity"
             android:exported="false"
@@ -37,7 +49,7 @@
         <activity android:name=".ui.ResultActivity" android:exported="false" />
         <activity android:name=".ui.ManualEntryActivity" android:exported="false" />
 
-        <!-- Home screen: opened after successful login -->
+        <!-- Home screen: opened after login or guest mode -->
         <activity
             android:name=".ui.MainActivity"
             android:exported="false"
@@ -68,16 +80,11 @@
         <activity android:name=".ui.AddOptionsActivity" android:exported="false" />
         <activity android:name=".ui.ProductDetailsActivity" android:exported="false" />
 
-        <!-- Login screen: launcher activity AND handles email confirmation / password reset links -->
+        <!-- Login screen: handles email confirmation / password reset links (no longer the launcher) -->
         <activity
             android:name=".ui.LoginActivity"
             android:exported="true"
             android:launchMode="singleTop">
-
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

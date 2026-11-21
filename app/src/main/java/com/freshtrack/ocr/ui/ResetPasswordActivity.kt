@@ -13,10 +13,12 @@ import com.freshtrack.ocr.auth.SupabaseAuthRepository
 import com.freshtrack.ocr.auth.SupabaseClientProvider
 import com.google.android.material.button.MaterialButton
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.freshtrack.ocr.auth.PasswordVisibility
+import kotlinx.coroutines.withTimeoutOrNull
 
 class ResetPasswordActivity : AppCompatActivity() {
 
@@ -33,8 +35,6 @@ class ResetPasswordActivity : AppCompatActivity() {
         etNewPassword = findViewById(R.id.etNewPassword)
         etConfirmPassword = findViewById(R.id.etConfirmPassword)
         btnUpdatePassword = findViewById(R.id.btnUpdatePassword)
-        PasswordVisibility.attach(etNewPassword)
-        PasswordVisibility.attach(etConfirmPassword)
 
         btnUpdatePassword.isEnabled = false
 
@@ -42,22 +42,30 @@ class ResetPasswordActivity : AppCompatActivity() {
             updatePassword()
         }
 
-        // LoginActivity already processed the reset link and created the
-        // recovery session. Here we only confirm that the session exists.
-        checkRecoverySession()
+        // LoginActivity handles the reset link and creates the recovery session.
+        // Here we wait for that session before allowing a password change.
+        waitForRecoverySession()
     }
 
-    private fun checkRecoverySession() {
+    private fun waitForRecoverySession() {
         lifecycleScope.launch {
             try {
-                val hasSession = withContext(Dispatchers.IO) {
-                    SupabaseClientProvider.client.auth.awaitInitialization()
-                    SupabaseClientProvider.client.auth.currentSessionOrNull() != null
+                val auth = SupabaseClientProvider.client.auth
+
+                withContext(Dispatchers.IO) {
+                    auth.awaitInitialization()
                 }
 
-                if (hasSession) {
+                // The session from the email link can take a moment to be saved.
+                // Wait up to 8 seconds for it instead of failing right away.
+                val authenticated = withTimeoutOrNull(8_000L) {
+                    auth.sessionStatus.first { it is SessionStatus.Authenticated }
+                }
+
+                if (authenticated != null) {
                     btnUpdatePassword.isEnabled = true
                 } else {
+                    Log.e(TAG, "No recovery session after waiting")
                     showInvalidLinkMessage()
                 }
             } catch (e: Exception) {

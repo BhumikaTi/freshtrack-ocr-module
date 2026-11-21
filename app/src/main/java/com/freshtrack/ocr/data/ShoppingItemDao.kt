@@ -38,4 +38,8 @@ interface ShoppingItemDao {
 
     @Query("DELETE FROM shopping_items WHERE id = :itemId AND userId = :userId")
     suspend fun deleteItemById(itemId: Int, userId: String)
+
+    // Moves guest shopping items to a logged-in user after login.
+    @Query("UPDATE shopping_items SET userId = :newUserId WHERE userId = :guestId")
+    suspend fun moveGuestItems(newUserId: String, guestId: String)
 }
