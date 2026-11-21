@@ -110,7 +110,6 @@ dependencies {
     implementation("androidx.room:room-ktx:2.8.5")
     kapt("androidx.room:room-compiler:2.8.5")
 
-
     // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.10.1")
 
@@ -131,7 +130,6 @@ dependencies {
 
     // Lifecycle
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
-
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4") // ChatViewModel
 
     // Logging
@@ -143,9 +141,10 @@ dependencies {
     // RecyclerView
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
-    // Supabase Auth
+    // Supabase Auth & Database (PostgREST)
     implementation(platform("io.github.jan-tennert.supabase:bom:3.0.3"))
     implementation("io.github.jan-tennert.supabase:auth-kt")
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
 
     // Ktor Android client
     implementation("io.ktor:ktor-client-android:3.0.3")

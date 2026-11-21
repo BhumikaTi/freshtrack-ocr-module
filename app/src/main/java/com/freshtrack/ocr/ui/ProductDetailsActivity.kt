@@ -1,6 +1,5 @@
 package com.freshtrack.ocr.ui
 
-import com.freshtrack.ocr.auth.CurrentUserProvider
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -9,6 +8,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.auth.CurrentUserProvider
 import com.freshtrack.ocr.data.ProductDao
 import com.freshtrack.ocr.data.ProductDatabase
 import kotlinx.coroutines.launch
@@ -162,18 +162,28 @@ class ProductDetailsActivity : AppCompatActivity() {
                             "expiryDate",
                             product.expiryDate
                         )
-                        intent.putExtra("location", product.location)
+
+                        intent.putExtra(
+                            "category",
+                            product.category
+                        )
+
+                        intent.putExtra(
+                            "location",
+                            product.location
+                        )
+
+                        intent.putExtra(
+                            "barcode",
+                            product.barcode
+                        )
 
                         startActivity(intent)
                     }
 
                     // -------------------------
-// DELETE PRODUCT
-// -------------------------
-
+                    // DELETE PRODUCT (Soft delete for cloud sync)
                     // -------------------------
-// DELETE PRODUCT
-// -------------------------
 
                     findViewById<View>(
                         R.id.btnDeleteProduct
@@ -219,10 +229,14 @@ class ProductDetailsActivity : AppCompatActivity() {
                                 ) { _, _ ->
 
                                     lifecycleScope.launch {
-                                        val userId = CurrentUserProvider.getUserId()
+                                        val currentUserId = CurrentUserProvider.getUserId()
                                             ?: return@launch
 
-                                        productDao.deleteProductById(productId, userId)
+                                        productDao.softDeleteProductById(
+                                            productId = productId,
+                                            userId = currentUserId,
+                                            timestamp = System.currentTimeMillis()
+                                        )
 
                                         Toast.makeText(
                                             this@ProductDetailsActivity,

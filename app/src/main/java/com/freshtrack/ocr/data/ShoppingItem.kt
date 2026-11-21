@@ -2,6 +2,7 @@ package com.freshtrack.ocr.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.UUID
 
 @Entity(tableName = "shopping_items")
 data class ShoppingItem(
@@ -12,5 +13,8 @@ data class ShoppingItem(
     val category: String = "Other",
     val isPurchased: Boolean = false,
     val inventoryTransferred: Boolean = false,
-    val userId: String = ""
+    val userId: String = "",
+    val syncId: String = UUID.randomUUID().toString(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val deletedAt: Long? = null
 )

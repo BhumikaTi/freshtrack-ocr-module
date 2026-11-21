@@ -1,12 +1,25 @@
 package com.freshtrack.ocr.ui
 
-import com.freshtrack.ocr.auth.CurrentUserProvider
+import android.app.Dialog
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.view.Gravity
+import android.view.ViewGroup
+import android.view.WindowManager
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
+import android.widget.GridLayout
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.auth.CurrentUserProvider
 import com.freshtrack.ocr.data.Product
 import com.freshtrack.ocr.data.ProductDao
 import com.freshtrack.ocr.data.ProductDatabase
@@ -16,19 +29,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import android.app.Dialog
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
-import android.view.Gravity
-import android.view.ViewGroup
-import android.view.WindowManager
-import android.widget.GridLayout
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.ArrayAdapter
-import android.widget.AutoCompleteTextView
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
+
 class AddProductActivity : AppCompatActivity() {
 
     private lateinit var etProductName: TextInputEditText
@@ -61,6 +62,7 @@ class AddProductActivity : AppCompatActivity() {
     // marking to change in case of error(neko)
     private var barcode: String? = null
     private var imageUrl: String? = null
+
     // Reads the expiry date from a photo. The existing OCR screen sends the date
     // back here, and it fills the expiry field.
     private val scanDateLauncher =
@@ -96,7 +98,7 @@ class AddProductActivity : AppCompatActivity() {
         etLocation = findViewById(R.id.etLocation)
         actvCategory = findViewById(R.id.actvCategory)
 
-// Set up category dropdown
+        // Set up category dropdown
         val categoryAdapter = ArrayAdapter(
             this,
             R.layout.item_category_dropdown,
@@ -635,7 +637,8 @@ class AddProductActivity : AppCompatActivity() {
                     productName = productName,
                     expiryDate = expiryDate,
                     location = location,
-                    category = category
+                    category = category,
+                    updatedAt = System.currentTimeMillis()
                 )
 
                 productDao.updateProduct(updatedProduct)
@@ -647,7 +650,7 @@ class AddProductActivity : AppCompatActivity() {
                 ).show()
             }
 
-            // Return to Product List.
+            // Return to Product List (its onResume will sync this change to Supabase).
             val intent = Intent(
                 this@AddProductActivity,
                 ProductListActivity::class.java
@@ -663,5 +666,3 @@ class AddProductActivity : AppCompatActivity() {
         }
     }
 }
-
-

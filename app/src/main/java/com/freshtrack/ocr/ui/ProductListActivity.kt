@@ -1,21 +1,25 @@
 package com.freshtrack.ocr.ui
 
-import com.freshtrack.ocr.auth.CurrentUserProvider
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import coil.load
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.auth.CurrentUserProvider
 import com.freshtrack.ocr.data.Product
 import com.freshtrack.ocr.data.ProductDao
 import com.freshtrack.ocr.data.ProductDatabase
+import com.freshtrack.ocr.sync.SyncManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputEditText
@@ -25,9 +29,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import android.view.View
-import android.widget.ImageView
-import coil.load
 
 class ProductListActivity : AppCompatActivity() {
 
@@ -153,6 +154,19 @@ class ProductListActivity : AppCompatActivity() {
 
         if (::productListContainer.isInitialized) {
             loadProducts()
+            syncWithCloud()
+        }
+    }
+
+    private fun syncWithCloud() {
+        lifecycleScope.launch {
+            val userId = CurrentUserProvider.getUserId()
+            if (userId.isNullOrBlank()) return@launch
+
+            val result = SyncManager.syncAll(applicationContext, userId)
+            if (result.isSuccess) {
+                loadProducts()
+            }
         }
     }
 
@@ -530,7 +544,7 @@ class ProductListActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // Delete click
+        // Delete click (soft delete so cloud syncs the deletion)
 
         deleteButton.setOnClickListener {
 
@@ -538,9 +552,14 @@ class ProductListActivity : AppCompatActivity() {
                 val userId = CurrentUserProvider.getUserId()
                     ?: return@launch
 
-                productDao.deleteProductById(product.id, userId)
+                productDao.softDeleteProductById(
+                    productId = product.id,
+                    userId = userId,
+                    timestamp = System.currentTimeMillis()
+                )
 
                 loadProducts()
+                syncWithCloud()
             }
         }
 

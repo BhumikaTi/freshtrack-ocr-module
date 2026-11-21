@@ -1,8 +1,9 @@
 package com.freshtrack.ocr.auth
 
 import com.freshtrack.ocr.BuildConfig
-import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
 
 object SupabaseClientProvider {
     val client = createSupabaseClient(
@@ -16,5 +17,6 @@ object SupabaseClientProvider {
             scheme = "freshtrack"
             host = "auth-callback"
         }
+        install(Postgrest)
     }
 }
