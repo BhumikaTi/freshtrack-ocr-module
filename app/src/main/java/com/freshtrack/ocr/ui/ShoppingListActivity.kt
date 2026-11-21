@@ -1,6 +1,5 @@
 package com.freshtrack.ocr.ui
 
-import com.freshtrack.ocr.auth.CurrentUserProvider
 import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.res.ColorStateList
@@ -18,9 +17,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.room.withTransaction
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.auth.CurrentUserProvider
 import com.freshtrack.ocr.data.Product
 import com.freshtrack.ocr.data.ProductDatabase
 import com.freshtrack.ocr.data.ShoppingItem
+import com.freshtrack.ocr.sync.SyncManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.launch
@@ -95,6 +96,19 @@ class ShoppingListActivity : AppCompatActivity() {
 
         if (::itemsContainer.isInitialized) {
             loadItems()
+            syncWithCloud()
+        }
+    }
+
+    private fun syncWithCloud() {
+        lifecycleScope.launch {
+            val userId = CurrentUserProvider.getUserId()
+            if (userId.isNullOrBlank()) return@launch
+
+            val result = SyncManager.syncAll(applicationContext, userId)
+            if (result.isSuccess) {
+                loadItems()
+            }
         }
     }
 
@@ -244,6 +258,7 @@ class ShoppingListActivity : AppCompatActivity() {
 
                             dialog.dismiss()
                             loadItems()
+                            syncWithCloud()
 
                         } catch (exception: Exception) {
                             showToast("Couldn't save item")
@@ -405,12 +420,14 @@ class ShoppingListActivity : AppCompatActivity() {
                                 val userId = CurrentUserProvider.getUserId()
                                     ?: return@launch
 
-                                shoppingDao.deleteItemById(
-                                    item.id,
-                                    userId
+                                shoppingDao.softDeleteItemById(
+                                    itemId = item.id,
+                                    userId = userId,
+                                    timestamp = System.currentTimeMillis()
                                 )
 
                                 loadItems()
+                                syncWithCloud()
 
                             } catch (exception: Exception) {
                                 showToast("Couldn't delete item")
@@ -447,17 +464,25 @@ class ShoppingListActivity : AppCompatActivity() {
 
                     if (!checked) {
                         shoppingDao.updateItem(
-                            latest.copy(isPurchased = false)
+                            latest.copy(
+                                isPurchased = false,
+                                updatedAt = System.currentTimeMillis()
+                            )
                         )
                         loadItems()
+                        syncWithCloud()
                         return@launch
                     }
 
                     if (latest.inventoryTransferred) {
                         shoppingDao.updateItem(
-                            latest.copy(isPurchased = true)
+                            latest.copy(
+                                isPurchased = true,
+                                updatedAt = System.currentTimeMillis()
+                            )
                         )
                         loadItems()
+                        syncWithCloud()
                         return@launch
                     }
 
@@ -576,19 +601,24 @@ class ShoppingListActivity : AppCompatActivity() {
                         shoppingDao.updateItem(
                             latest.copy(
                                 isPurchased = true,
-                                inventoryTransferred = true
+                                inventoryTransferred = true,
+                                updatedAt = System.currentTimeMillis()
                             )
                         )
 
                     } else {
                         shoppingDao.updateItem(
-                            latest.copy(isPurchased = true)
+                            latest.copy(
+                                isPurchased = true,
+                                updatedAt = System.currentTimeMillis()
+                            )
                         )
                     }
                 }
 
                 showToast("${item.itemName} added to inventory")
                 loadItems()
+                syncWithCloud()
 
             } catch (exception: Exception) {
                 resetCheckbox(checkbox, item.isPurchased)

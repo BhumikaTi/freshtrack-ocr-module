@@ -1,6 +1,5 @@
 package com.freshtrack.ocr.ui
 
-import com.freshtrack.ocr.auth.CurrentUserProvider
 import android.app.Dialog
 import android.content.Intent
 import android.content.res.ColorStateList
@@ -30,6 +29,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.freshtrack.ocr.R
+import com.freshtrack.ocr.auth.CurrentUserProvider
 import com.freshtrack.ocr.data.Product
 import com.freshtrack.ocr.data.ProductDao
 import com.freshtrack.ocr.data.ProductDatabase
@@ -582,7 +582,8 @@ class AddProductActivity : AppCompatActivity() {
                     productName = productName,
                     expiryDate = expiryDate,
                     location = location,
-                    category = category
+                    category = category,
+                    updatedAt = System.currentTimeMillis()
                 )
 
                 productDao.updateProduct(updatedProduct)
@@ -594,7 +595,7 @@ class AddProductActivity : AppCompatActivity() {
                 ).show()
             }
 
-            // Return to Product List.
+            // Return to Product List (its onResume will sync this change to Supabase).
             val intent = Intent(
                 this@AddProductActivity,
                 ProductListActivity::class.java

@@ -35,6 +35,8 @@ import com.freshtrack.ocr.auth.SupabaseAuthRepository
 import com.freshtrack.ocr.data.Product
 import com.freshtrack.ocr.data.ProductDatabase
 import com.freshtrack.ocr.data.ShoppingItem
+import com.freshtrack.ocr.sync.SyncManager
+import com.freshtrack.ocr.sync.SyncWorker
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
@@ -107,6 +109,7 @@ class MainActivity : AppCompatActivity() {
 
         requestNotificationPermission()
         scheduleExpiryNotifications()
+        SyncWorker.schedulePeriodicSync(this)
 
         findViewById<MaterialButton>(R.id.btnScanCamera)
             .setOnClickListener {
@@ -155,6 +158,26 @@ class MainActivity : AppCompatActivity() {
             loadRecentProducts()
             loadUseFirst()
             loadShoppingPreview()
+            syncWithCloud()
+        }
+    }
+
+    // ---------- CLOUD SYNC ----------
+
+    private fun syncWithCloud() {
+        lifecycleScope.launch {
+            val userId = CurrentUserProvider.getUserId()
+            if (userId.isNullOrBlank()) return@launch
+
+            val result = SyncManager.syncAll(applicationContext, userId)
+            if (result.isSuccess) {
+                loadRecentProducts()
+                loadUseFirst()
+                loadShoppingPreview()
+            } else {
+                // Retry automatically in the background as soon as internet is back
+                SyncWorker.enqueueOneTimeSync(applicationContext)
+            }
         }
     }
 
@@ -507,7 +530,7 @@ class MainActivity : AppCompatActivity() {
             else -> "Expires in $daysLeft days"
         }
 
-    /** Removes the product from the list, with an Undo option. */
+    /** Soft-deletes the product so deletion syncs to Supabase, with an Undo option. */
     private fun removeProduct(product: Product, message: String) {
         lifecycleScope.launch {
             try {
@@ -515,10 +538,15 @@ class MainActivity : AppCompatActivity() {
 
                 if (userId.isNullOrBlank()) return@launch
 
-                database.productDao().deleteProductById(product.id, userId)
+                database.productDao().softDeleteProductById(
+                    productId = product.id,
+                    userId = userId,
+                    timestamp = System.currentTimeMillis()
+                )
 
                 loadRecentProducts()
                 loadUseFirst()
+                syncWithCloud()
 
                 Snackbar.make(
                     findViewById(android.R.id.content),
@@ -526,9 +554,15 @@ class MainActivity : AppCompatActivity() {
                     Snackbar.LENGTH_LONG
                 ).setAction("UNDO") {
                     lifecycleScope.launch {
-                        database.productDao().insertProduct(product)
+                        database.productDao().updateProduct(
+                            product.copy(
+                                deletedAt = null,
+                                updatedAt = System.currentTimeMillis()
+                            )
+                        )
                         loadRecentProducts()
                         loadUseFirst()
+                        syncWithCloud()
                     }
                 }.show()
 
@@ -784,6 +818,7 @@ class MainActivity : AppCompatActivity() {
 
                             dialog.dismiss()
                             loadShoppingPreview()
+                            syncWithCloud()
 
                             Toast.makeText(
                                 this@MainActivity,
